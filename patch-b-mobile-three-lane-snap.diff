@@ -1,0 +1,197 @@
+      {/* -------- Mobile: three-lane horizontal snap -------- */}
+      <div className="mt-4 lg:hidden">
+        <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory">
+          {/* Left lane */}
+          <div className="snap-start shrink-0 w-[88vw] max-w-[520px]">
+            <div className="space-y-2">
+              <div className="text-[10px] text-stone-400 dark:text-stone-500">Left wing</div>
+              {left.length === 0 && (
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-[11px] text-stone-400 dark:bg-stone-950/40 dark:border-stone-800 dark:text-stone-500">
+                  No rooms on this level.
+                </div>
+              )}
+              {left.map((r) => (
+                <RoomCard
+                  key={r.id}
+                  room={r}
+                  prefs={prefs}
+                  baseRate={baseRate}
+                  selected={selectedRoom?.number === r.number}
+                  onSelect={onSelectRoom}
+                  mode={mode}
+                  onAddSignal={onAddSignal}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Hallway lane */}
+          <div className="snap-start shrink-0 w-[88vw] max-w-[520px]">
+            <div className="rounded-2xl border border-stone-200 bg-stone-50/70 p-3 dark:bg-stone-950/30 dark:border-stone-800">
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] text-stone-400 dark:text-stone-500 uppercase tracking-widest">
+                  Hallway cues
+                </div>
+                {editable && (
+                  <div className="text-[10px] text-stone-400 dark:text-stone-500">drop to reposition</div>
+                )}
+              </div>
+              <div className="mt-3 space-y-2">
+                {Array.from({ length: slotCount }).map((_, idx) => {
+                  const here = lmByIndex.get(idx) || [];
+                  return (
+                    <div
+                      key={idx}
+                      onDragOver={allowDrop}
+                      onDrop={(e) => dropOnSlot(e, idx)}
+                      className={
+                        "min-h-[38px] rounded-xl border px-2 py-2 flex flex-wrap gap-1.5 items-center " +
+                        (editable
+                          ? "bg-white border-stone-200 dark:bg-stone-900 dark:border-stone-800"
+                          : "bg-stone-100/70 border-stone-200 dark:bg-stone-950/50 dark:border-stone-800")
+                      }
+                    >
+                      <span className="text-[9px] text-stone-400 dark:text-stone-500 mr-1">{idx + 1}</span>
+                      {here.length === 0 ? (
+                        <span className="text-[10px] text-stone-400 dark:text-stone-500">
+                          {editable ? "Drop amenity here" : "—"}
+                        </span>
+                      ) : (
+                        here.map((lm) => (
+                          <LandmarkChip
+                            key={lm.id}
+                            landmark={lm}
+                            editable={editable}
+                            onDragStart={handleDragStart}
+                          />
+                        ))
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Right lane */}
+          <div className="snap-start shrink-0 w-[88vw] max-w-[520px]">
+            <div className="space-y-2">
+              <div className="text-[10px] text-stone-400 dark:text-stone-500">Right wing</div>
+              {right.length === 0 && (
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-[11px] text-stone-400 dark:bg-stone-950/40 dark:border-stone-800 dark:text-stone-500">
+                  No rooms on this level.
+                </div>
+              )}
+              {right.map((r) => (
+                <RoomCard
+                  key={r.id}
+                  room={r}
+                  prefs={prefs}
+                  baseRate={baseRate}
+                  selected={selectedRoom?.number === r.number}
+                  onSelect={onSelectRoom}
+                  mode={mode}
+                  onAddSignal={onAddSignal}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-1 text-[9px] text-stone-400 dark:text-stone-500">
+          Swipe for Left • Hallway • Right
+        </div>
+      </div>
+
+      {/* -------- Desktop: classic 3-lane grid -------- */}
+      <div className="mt-4 hidden lg:grid lg:grid-cols-3 gap-4">
+        {/* Left wing */}
+        <div className="space-y-2">
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Left wing</div>
+          {left.length === 0 && (
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-[11px] text-stone-400 dark:bg-stone-950/40 dark:border-stone-800 dark:text-stone-500">
+              No rooms on this level.
+            </div>
+          )}
+          {left.map((r) => (
+            <RoomCard
+              key={r.id}
+              room={r}
+              prefs={prefs}
+              baseRate={baseRate}
+              selected={selectedRoom?.number === r.number}
+              onSelect={onSelectRoom}
+              mode={mode}
+              onAddSignal={onAddSignal}
+            />
+          ))}
+        </div>
+
+        {/* Hallway slots */}
+        <div className="rounded-2xl border border-stone-200 bg-stone-50/70 p-3 dark:bg-stone-950/30 dark:border-stone-800">
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] text-stone-400 dark:text-stone-500 uppercase tracking-widest">
+              Hallway cues
+            </div>
+            {editable && (
+              <div className="text-[10px] text-stone-400 dark:text-stone-500">drop to reposition</div>
+            )}
+          </div>
+          <div className="mt-3 space-y-2">
+            {Array.from({ length: slotCount }).map((_, idx) => {
+              const here = lmByIndex.get(idx) || [];
+              return (
+                <div
+                  key={idx}
+                  onDragOver={allowDrop}
+                  onDrop={(e) => dropOnSlot(e, idx)}
+                  className={
+                    "min-h-[38px] rounded-xl border px-2 py-2 flex flex-wrap gap-1.5 items-center " +
+                    (editable
+                      ? "bg-white border-stone-200 dark:bg-stone-900 dark:border-stone-800"
+                      : "bg-stone-100/70 border-stone-200 dark:bg-stone-950/50 dark:border-stone-800")
+                  }
+                >
+                  <span className="text-[9px] text-stone-400 dark:text-stone-500 mr-1">{idx + 1}</span>
+                  {here.length === 0 ? (
+                    <span className="text-[10px] text-stone-400 dark:text-stone-500">
+                      {editable ? "Drop amenity here" : "—"}
+                    </span>
+                  ) : (
+                    here.map((lm) => (
+                      <LandmarkChip
+                        key={lm.id}
+                        landmark={lm}
+                        editable={editable}
+                        onDragStart={handleDragStart}
+                      />
+                    ))
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right wing */}
+        <div className="space-y-2">
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Right wing</div>
+          {right.length === 0 && (
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-[11px] text-stone-400 dark:bg-stone-950/40 dark:border-stone-800 dark:text-stone-500">
+              No rooms on this level.
+            </div>
+          )}
+          {right.map((r) => (
+            <RoomCard
+              key={r.id}
+              room={r}
+              prefs={prefs}
+              baseRate={baseRate}
+              selected={selectedRoom?.number === r.number}
+              onSelect={onSelectRoom}
+              mode={mode}
+              onAddSignal={onAddSignal}
+            />
+          ))}
+        </div>
+      </div>

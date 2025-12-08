@@ -14,6 +14,7 @@ import React, { useMemo, useRef, useState } from "react";
  * - Staff authoring: add landmarks + drag into hallway slots
  * - Guest Waze-lite signals modal (simple)
  * - Simple recommendations per active floor
+ * - Global Light/Dark visual theme
  *
  * Not included yet (by design):
  * - Voice/video/sketch ingestion
@@ -26,6 +27,7 @@ import React, { useMemo, useRef, useState } from "react";
 // -----------------------------
 
 type Mode = "guest" | "staff";
+
 type Theme = "light" | "dark";
 
 type AmenityType =
@@ -290,7 +292,8 @@ function computeMatch(room: Room, prefs: Prefs) {
       ? 1.2
       : 0;
 
-  const raw = room.quiet * qw + room.access * aw + room.view * 0.15 - elevatorPenalty;
+  const raw =
+    room.quiet * qw + room.access * aw + room.view * 0.15 - elevatorPenalty;
   const score = clamp(Math.round(raw * 10), 0, 100);
 
   const quietBias = Math.round((room.quiet - 5) * 1.2 * qw * 2);
@@ -315,13 +318,14 @@ function Badge({
 }) {
   const cls =
     tone === "good"
-      ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+      ? "bg-stone-900 text-white dark:bg-white dark:text-stone-900"
       : tone === "warn"
       ? "bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-200"
-      : "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-200";
-
+      : "bg-stone-100 text-stone-600 dark:bg-stone-900 dark:text-stone-300";
   return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${cls}`}>
+    <span
+      className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${cls}`}
+    >
       {label}
     </span>
   );
@@ -337,12 +341,12 @@ function SectionTitle({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-start sm:items-center justify-between gap-3 min-w-0">
       <div>
-        <div className="text-xs tracking-widest text-stone-400 dark:text-stone-500">
+        <div className="hidden sm:block text-[10px] sm:text-xs tracking-[0.22em] text-stone-400 dark:text-stone-500">
           {kicker}
         </div>
-        <div className="font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+        <div className="font-semibold tracking-tight text-stone-900 dark:text-stone-50 truncate">
           {title}
         </div>
       </div>
@@ -371,17 +375,21 @@ function ModeToggle({
           className={
             "px-3 py-1.5 text-xs rounded-lg transition-all " +
             (mode === m
-              ? "bg-white shadow-sm text-stone-900 dark:bg-stone-100 dark:text-stone-900"
+              ? "bg-white shadow-sm text-stone-900 dark:bg-stone-50 dark:text-stone-900"
               : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100")
           }
         >
-          <span className="hidden sm:inline">{m === "guest" ? "Guest View" : "Staff Edit"}</span>
-          <span className="sm:hidden">{m === "guest" ? "Guest" : "Staff"}</span>
+          {m === "guest" ? "Guest View" : "Staff Edit"}
         </button>
       ))}
     </div>
   );
 }
+
+// -----------------------------
+// Theme toggle
+// -----------------------------
+
 function ThemeToggle({
   theme,
   onChange,
@@ -396,19 +404,19 @@ function ThemeToggle({
           key={t}
           onClick={() => onChange(t)}
           className={
-            "px-3 py-1.5 text-xs rounded-lg transition-all capitalize " +
+            "px-3 py-1.5 text-xs rounded-lg transition-all " +
             (theme === t
-              ? "bg-white shadow-sm text-stone-900 dark:bg-stone-100 dark:text-stone-900"
+              ? "bg-white shadow-sm text-stone-900 dark:bg-stone-50"
               : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100")
           }
         >
-          <span className="hidden sm:inline">{t}</span>
-          <span className="sm:hidden">{t === "light" ? "Light" : "Dark"}</span>
+          {t === "light" ? "Light" : "Dark"}
         </button>
       ))}
     </div>
   );
 }
+
 // -----------------------------
 // Hero
 // -----------------------------
@@ -427,18 +435,32 @@ function HotelHero({
   onTheme: (t: Theme) => void;
 }) {
   const hasImage = Boolean(hotel.imageUrl);
+
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm dark:bg-stone-900 dark:border-stone-800">
+    <div className="relative overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-950">
+      {/* Background image/texture */}
       <div
         className="absolute inset-0"
         style={{
           backgroundImage: hasImage
-            ? `linear-gradient(180deg, rgba(250,250,249,0.82), rgba(250,250,249,0.98)), url(${hotel.imageUrl})`
+            ? `linear-gradient(180deg, rgba(250,250,249,0.86), rgba(250,250,249,0.98)), url(${hotel.imageUrl})`
             : "radial-gradient(circle at 20% 0%, rgba(120,113,108,0.10), transparent 40%), radial-gradient(circle at 80% 30%, rgba(120,113,108,0.08), transparent 45%)",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       />
+      <div
+        className="absolute inset-0 hidden dark:block"
+        style={{
+          backgroundImage: hasImage
+            ? `linear-gradient(180deg, rgba(2,6,23,0.78), rgba(2,6,23,0.94)), url(${hotel.imageUrl})`
+            : "radial-gradient(circle at 20% 0%, rgba(226,232,240,0.06), transparent 40%), radial-gradient(circle at 80% 30%, rgba(226,232,240,0.05), transparent 45%)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+
+      {/* Grid overlay */}
       <div
         className="absolute inset-0 opacity-30"
         style={{
@@ -447,29 +469,50 @@ function HotelHero({
           backgroundSize: "26px 26px",
         }}
       />
+      <div
+        className="absolute inset-0 opacity-20 hidden dark:block"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(148,163,184,0.10) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.10) 1px, transparent 1px)",
+          backgroundSize: "26px 26px",
+        }}
+      />
 
-      <div className="relative p-2.5 sm:p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Content */}
+      <div className="relative p-6 sm:p-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-stone-900 rounded-2xl flex items-center justify-center text-white font-bold dark:bg-stone-50 dark:text-stone-900">
+            <div className="w-12 h-12 bg-stone-900 rounded-2xl flex items-center justify-center text-white font-bold tracking-tight dark:bg-white dark:text-stone-900">
               R
             </div>
             <div>
-              <div className="text-[10px] tracking-widest text-stone-400 dark:text-stone-500">ROOMSENSE</div>
-              <div className="text-base sm:text-xl font-semibold text-stone-900 dark:text-stone-50">{hotel.name}</div>
-              <div className="text-[11px] sm:text-sm text-stone-500 dark:text-stone-400">{hotel.location}</div>
+              <div className="text-xs tracking-[0.28em] text-stone-400 dark:text-stone-500">
+                ROOMSENSE
+              </div>
+              <div className="text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+                {hotel.name}
+              </div>
+              <div className="text-sm text-stone-500 dark:text-stone-400">
+                {hotel.location}
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-            <div className="flex items-center gap-1">
-              <div className="rounded-xl bg-white/70 px-2 py-1 border border-stone-200 dark:bg-stone-900/60 dark:border-stone-700">
-                <div className="text-[9px] text-stone-400 dark:text-stone-500">Base rate</div>
-                <div className="text-[11px] font-semibold text-stone-900 dark:text-stone-50">${hotel.baseRate}/night</div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-white/70 px-4 py-3 border border-stone-200 backdrop-blur-sm dark:bg-stone-900/60 dark:border-stone-800">
+                <div className="text-[10px] text-stone-400 dark:text-stone-500">
+                  Base rate (mock)
+                </div>
+                <div className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+                  ${hotel.baseRate}/night
+                </div>
               </div>
-              <div className="rounded-xl bg-white/70 px-2 py-1 border border-stone-200 dark:bg-stone-900/60 dark:border-stone-700">
-                <div className="text-[9px] text-stone-400 dark:text-stone-500">Floors</div>
-                <div className="text-[11px] font-semibold text-stone-900 dark:text-stone-50">{hotel.floors.length}</div>
+              <div className="rounded-2xl bg-white/70 px-4 py-3 border border-stone-200 backdrop-blur-sm dark:bg-stone-900/60 dark:border-stone-800">
+                <div className="text-[10px] text-stone-400 dark:text-stone-500">Floors</div>
+                <div className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+                  {hotel.floors.length}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -479,9 +522,9 @@ function HotelHero({
           </div>
         </div>
 
-        <div className="mt-2 hidden md:flex items-center gap-2">
+        <div className="mt-6 flex items-center gap-2">
           <span className="h-[1px] flex-1 bg-stone-200 dark:bg-stone-800" />
-          <span className="text-[10px] text-stone-400 dark:text-stone-500 tracking-widest">
+          <span className="text-[10px] text-stone-400 dark:text-stone-500 tracking-[0.22em]">
             ABSTRACTED LAYOUT • TRUST SIGNALS • MICRO-PREMIUMS
           </span>
           <span className="h-[1px] flex-1 bg-stone-200 dark:bg-stone-800" />
@@ -504,84 +547,43 @@ function FloorNavigator({
   activeFloor: number;
   onJump: (n: number) => void;
 }) {
-  const floorsSorted = useMemo(
-    () => [...hotel.floors].sort((a, b) => a.number - b.number),
-    [hotel.floors]
-  );
-  const idx = Math.max(0, floorsSorted.findIndex((f) => f.number === activeFloor));
-  const current = floorsSorted[idx] ?? floorsSorted[0];
-
-  const canUp = idx < floorsSorted.length - 1;
-  const canDown = idx > 0;
-
-  const jumpUp = () => {
-    if (!canUp) return;
-    onJump(floorsSorted[idx + 1].number);
-  };
-  const jumpDown = () => {
-    if (!canDown) return;
-    onJump(floorsSorted[idx - 1].number);
-  };
-
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-stone-200 dark:bg-stone-900 dark:border-stone-800 p-4">
+    <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-4 dark:bg-stone-950 dark:border-stone-800">
       <SectionTitle
         kicker="HOTEL OVERVIEW"
-        title="Floors"
-        right={<span className="text-[10px] text-stone-400 dark:text-stone-500">{floorsSorted.length} levels</span>}
+        title="Floor navigator"
+        right={<span className="text-[10px] text-stone-400">tap to jump</span>}
       />
-
-      <div className="mt-3 rounded-2xl border border-stone-200 bg-stone-50 p-3 dark:bg-stone-950/40 dark:border-stone-800">
-        <div className="flex items-center justify-between gap-3">
-          <button
-            onClick={jumpUp}
-            disabled={!canUp}
-            className={
-              "h-9 w-9 rounded-xl border text-xs font-medium transition " +
-              (canUp
-                ? "bg-white border-stone-200 text-stone-700 hover:border-stone-300 hover:bg-stone-50 dark:bg-stone-900 dark:border-stone-800 dark:text-stone-200 dark:hover:border-stone-700"
-                : "bg-stone-100 border-stone-200 text-stone-300 cursor-not-allowed dark:bg-stone-900/40 dark:border-stone-800 dark:text-stone-600")
-            }
-            aria-label="Go up a floor"
-            title="Higher floor"
-          >
-            ▲
-          </button>
-
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-12 w-12 rounded-full bg-white border border-stone-200 flex items-center justify-center text-lg font-semibold text-stone-900 dark:bg-stone-100 dark:border-stone-200 dark:text-stone-900">
-              {current.number}
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-semibold text-stone-900 dark:text-stone-50 truncate">
-                {current.name}
+      <div className="mt-3 rounded-2xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/40">
+        <div className="flex flex-col gap-2">
+          {[...hotel.floors].reverse().map((f) => (
+            <button
+              key={f.number}
+              onClick={() => onJump(f.number)}
+              className={
+                "rounded-xl border px-3 py-2 text-left transition-all " +
+                (activeFloor === f.number
+                  ? "bg-stone-900 border-stone-900 text-white shadow-sm dark:bg-stone-50 dark:border-stone-50 dark:text-stone-900"
+                  : "bg-white border-stone-200 text-stone-700 hover:border-stone-300 dark:bg-stone-950 dark:border-stone-800 dark:text-stone-200 dark:hover:border-stone-700")
+              }
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold tracking-tight">
+                  {f.number} • {f.name}
+                </div>
+                <div
+                  className={
+                    "text-[10px] " +
+                    (activeFloor === f.number
+                      ? "text-white/70 dark:text-stone-600"
+                      : "text-stone-400")
+                  }
+                >
+                  {f.rooms.length ? `${f.rooms.length} rooms` : "amenity"}
+                </div>
               </div>
-              <div className="text-[10px] text-stone-400 dark:text-stone-500">
-                {current.rooms.length ? `${current.rooms.length} rooms` : "amenity level"}
-                {current.feature ? ` • ${current.feature}` : ""}
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={jumpDown}
-            disabled={!canDown}
-            className={
-              "h-9 w-9 rounded-xl border text-xs font-medium transition " +
-              (canDown
-                ? "bg-white border-stone-200 text-stone-700 hover:border-stone-300 hover:bg-stone-50 dark:bg-stone-900 dark:border-stone-800 dark:text-stone-200 dark:hover:border-stone-700"
-                : "bg-stone-100 border-stone-200 text-stone-300 cursor-not-allowed dark:bg-stone-900/40 dark:border-stone-800 dark:text-stone-600")
-            }
-            aria-label="Go down a floor"
-            title="Lower floor"
-          >
-            ▼
-          </button>
-        </div>
-
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-[10px] text-stone-400 dark:text-stone-500">Tap arrows to change floors</span>
-          <span className="text-[10px] text-stone-400 dark:text-stone-500">{idx + 1}/{floorsSorted.length}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>
@@ -607,8 +609,12 @@ function PreferencePanel({
       : "Balanced";
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-900 dark:border-stone-800">
-      <SectionTitle kicker="PREFERENCES" title="Quiet vs Convenience" right={<span className="text-xs text-stone-500">{label}</span>} />
+    <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-950 dark:border-stone-800">
+      <SectionTitle
+        kicker="PREFERENCES"
+        title="Quiet vs Convenience"
+        right={<span className="text-xs text-stone-500 dark:text-stone-400">{label}</span>}
+      />
 
       <input
         type="range"
@@ -618,11 +624,11 @@ function PreferencePanel({
         onChange={(e) =>
           setPrefs((p) => ({ ...p, quietVsAccess: Number(e.target.value) }))
         }
-        className="mt-4 w-full accent-stone-900"
+        className="mt-4 w-full accent-stone-900 dark:accent-stone-100"
       />
 
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <label className="flex items-center justify-between rounded-xl bg-stone-50 border border-stone-200 px-3 py-2 dark:bg-stone-950/40 dark:border-stone-800">
+        <label className="flex items-center justify-between rounded-xl bg-stone-50 border border-stone-200 px-3 py-2 dark:bg-stone-900/40 dark:border-stone-800">
           <span className="text-xs text-stone-600 dark:text-stone-300">Avoid elevators</span>
           <input
             type="checkbox"
@@ -630,14 +636,18 @@ function PreferencePanel({
             onChange={(e) =>
               setPrefs((p) => ({ ...p, avoidElevator: e.target.checked }))
             }
-            className="h-4 w-4 accent-stone-900"
+            className="h-4 w-4 accent-stone-900 dark:accent-stone-100"
           />
         </label>
 
-        <div className="rounded-xl bg-stone-50 border border-stone-200 px-3 py-2 dark:bg-stone-950/40 dark:border-stone-800">
+        <div className="rounded-xl bg-stone-50 border border-stone-200 px-3 py-2 dark:bg-stone-900/40 dark:border-stone-800">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-stone-600 dark:text-stone-300">Premium tolerance</span>
-            <span className="text-xs font-medium text-stone-900 dark:text-stone-50">+${prefs.premiumTolerance}</span>
+            <span className="text-xs text-stone-600 dark:text-stone-300">
+              Premium tolerance
+            </span>
+            <span className="text-xs font-medium text-stone-900 dark:text-stone-50">
+              +${prefs.premiumTolerance}
+            </span>
           </div>
           <input
             type="range"
@@ -646,9 +656,12 @@ function PreferencePanel({
             step={1}
             value={prefs.premiumTolerance}
             onChange={(e) =>
-              setPrefs((p) => ({ ...p, premiumTolerance: Number(e.target.value) }))
+              setPrefs((p) => ({
+                ...p,
+                premiumTolerance: Number(e.target.value),
+              }))
             }
-            className="mt-2 w-full accent-stone-900"
+            className="mt-2 w-full accent-stone-900 dark:accent-stone-100"
           />
         </div>
       </div>
@@ -685,107 +698,89 @@ function RoomCard({
   const delta = match.suggestedDelta;
   const finalRate = baseRate + delta;
 
-  const quietTone = room.quiet >= 7 ? "good" : room.quiet <= 4 ? "warn" : "neutral";
-  const expanded = selected;
-
-  const extraTags = (room.tags || []).filter(Boolean).slice(0, 3);
+  const quietTone =
+    room.quiet >= 7 ? "good" : room.quiet <= 4 ? "warn" : "neutral";
 
   return (
     <div
       className={
-        "rounded-2xl border bg-white transition-[border,box-shadow,background-color] dark:bg-stone-900 " +
-        (expanded
+        "rounded-2xl border p-4 bg-white transition-all " +
+        (selected
           ? "border-stone-900 shadow-sm dark:border-stone-50"
-          : "border-stone-200 hover:border-stone-300 dark:border-stone-800 dark:hover:border-stone-700")
+          : "border-stone-200 hover:border-stone-300 dark:border-stone-800 dark:hover:border-stone-700") +
+        " dark:bg-stone-950"
       }
     >
-      <button
-        onClick={() => onSelect(room)}
-        className="w-full text-left p-3 sm:p-4"
-        aria-expanded={expanded}
-        title={expanded ? "Collapse room" : "Expand room"}
-      >
+      <button onClick={() => onSelect(room)} className="w-full text-left">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+          <div>
             <div className="flex items-center gap-2">
-              <div className="text-base sm:text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+              <div className="text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-50">
                 {room.number}
               </div>
-              <span className="text-[9px] sm:text-[10px] text-stone-400 dark:text-stone-500 uppercase tracking-widest">
+              <span className="text-[10px] text-stone-400 uppercase tracking-widest">
                 {room.wing} wing
               </span>
-              {!expanded && room.tags?.length ? (
-                <span className="text-[9px] text-stone-400 dark:text-stone-500">
-                  • {room.tags.length} tags
-                </span>
-              ) : null}
             </div>
-
             <div className="mt-1 flex flex-wrap gap-1.5">
               <Badge label={`Quiet ${room.quiet}`} tone={quietTone} />
-              <Badge label={`Love ${room.love}`} tone={room.love >= 4 ? "good" : "neutral"} />
-              {expanded &&
-                extraTags.map((t) => (
-                  <Badge key={t} label={t} />
-                ))}
+              <Badge
+                label={`Love ${room.love}`}
+                tone={room.love >= 4 ? "good" : "neutral"}
+              />
+              {(room.tags || []).slice(0, 3).map((t) => (
+                <Badge key={t} label={t} />
+              ))}
             </div>
-
-            {expanded && (
-              <div className="mt-2 text-[10px] text-stone-400 dark:text-stone-500">
-                Match score {match.score} • Confidence {match.confidence}
-              </div>
-            )}
           </div>
 
-          <div className="text-right shrink-0">
-            <div className="text-[9px] sm:text-[10px] text-stone-400 dark:text-stone-500">est. rate</div>
-            <div className="text-sm sm:text-base font-semibold text-stone-900 dark:text-stone-50">
+          <div className="text-right">
+            <div className="text-[10px] text-stone-400 dark:text-stone-500">
+              est. rate
+            </div>
+            <div className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-50">
               ${finalRate}
-              <span className="text-[9px] sm:text-[10px] font-medium text-stone-400 dark:text-stone-500">/n</span>
+              <span className="text-[10px] font-medium text-stone-400 dark:text-stone-500">
+                /n
+              </span>
             </div>
             {delta !== 0 && (
-              <div className="text-[9px] sm:text-[10px] text-stone-500">
+              <div className="text-[10px] text-stone-500 dark:text-stone-400">
                 {delta > 0 ? `+${delta}` : `${delta}`} vs base
               </div>
             )}
           </div>
         </div>
 
-        {/* Expanded details only */}
-        {expanded && (
-          <>
-            <div className="mt-3 rounded-xl bg-stone-50 border border-stone-200 px-3 py-2 dark:bg-stone-950/40 dark:border-stone-800">
-              <div className="text-[10px] text-stone-400 dark:text-stone-500">signal</div>
-              <div className="text-xs text-stone-700 dark:text-stone-200">
-                {room.notes && room.notes.trim().length > 0
-                  ? room.notes
-                  : "Balanced corridor tradeoff"}
-              </div>
-            </div>
+        <div className="mt-3 rounded-xl bg-stone-50 border border-stone-200 px-3 py-2 dark:bg-stone-900/40 dark:border-stone-800">
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">
+            signal
+          </div>
+          <div className="text-xs text-stone-700 dark:text-stone-200">
+            {room.notes && room.notes.trim().length > 0
+              ? room.notes
+              : "Balanced corridor tradeoff"}
+          </div>
+        </div>
 
-            <div className="mt-3 flex items-center justify-between">
-              <div className="text-[10px] text-stone-400 dark:text-stone-500">
-                {room.reports} community pings
-              </div>
-              <div className="text-[10px] text-stone-400 dark:text-stone-500">
-                View {room.view}/10 • Access {room.access}/10
-              </div>
-            </div>
-          </>
-        )}
+        <div className="mt-3 flex items-center justify-between">
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">
+            {room.reports} community pings
+          </div>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">
+            Confidence: {match.confidence}
+          </div>
+        </div>
       </button>
 
-      {/* Guest: only show signal action when expanded */}
-      {mode === "guest" && expanded && (
-        <div className="px-3 sm:px-4 pb-3">
-          <div className="flex justify-end">
-            <button
-              onClick={() => onAddSignal(room)}
-              className="px-2.5 py-1 rounded-lg text-[10px] font-medium border border-stone-200 bg-stone-50 hover:bg-white hover:border-stone-300 transition dark:bg-stone-950/40 dark:border-stone-800 dark:text-stone-200 dark:hover:bg-stone-900 dark:hover:border-stone-700"
-            >
-              Add signal
-            </button>
-          </div>
+      {mode === "guest" && (
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={() => onAddSignal(room)}
+            className="px-3 py-1.5 rounded-lg text-[10px] font-medium border border-stone-200 bg-stone-50 hover:bg-white hover:border-stone-300 transition dark:border-stone-800 dark:bg-stone-900/40 dark:hover:bg-stone-900"
+          >
+            Add quick signal
+          </button>
         </div>
       )}
     </div>
@@ -813,13 +808,15 @@ function LandmarkChip({
       className={
         "inline-flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-[10px] " +
         (editable
-          ? "bg-white border-stone-200 cursor-grab active:cursor-grabbing dark:bg-stone-900 dark:border-stone-800"
-          : "bg-stone-50 border-stone-200 dark:bg-stone-950/40 dark:border-stone-800")
+          ? "bg-white border-stone-200 cursor-grab active:cursor-grabbing dark:bg-stone-950 dark:border-stone-800"
+          : "bg-stone-50 border-stone-200 dark:bg-stone-900/40 dark:border-stone-800")
       }
       title={meta.label}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-stone-900 opacity-70 dark:bg-stone-100" />
-      <span className=" text-stone-700 dark:text-stone-200 font-medium">{meta.badge}</span>
+      <span className="text-stone-700 font-medium dark:text-stone-200">
+        {meta.badge}
+      </span>
     </div>
   );
 }
@@ -827,6 +824,10 @@ function LandmarkChip({
 // -----------------------------
 // Wing grid (abstract plan)
 // -----------------------------
+
+// Mobile intent: allow a compact tri-pane experience without forcing a single-wing-only flow.
+// On very small screens we switch the 3-column plan into a horizontal, scrollable tri-view
+// so left wing • hallway • right wing can be viewed together.
 
 function WingGrid({
   rooms,
@@ -852,8 +853,6 @@ function WingGrid({
   const editable = mode === "staff";
   const left = rooms.filter((r) => r.wing === "left");
   const right = rooms.filter((r) => r.wing === "right");
-  const leftOrdered = [...left].sort((a, b) => Number(a.number) - Number(b.number));
-  const rightOrdered = [...right].sort((a, b) => Number(a.number) - Number(b.number));
 
   const slotCount = Math.max(left.length, right.length, 8);
   const dragRef = useRef<Landmark | null>(null);
@@ -893,7 +892,7 @@ function WingGrid({
   }, [landmarks]);
 
   return (
-    <div className="relative rounded-2xl border border-stone-200 bg-white p-4 dark:bg-stone-900 dark:border-stone-800">
+    <div className="relative rounded-2xl border border-stone-200 bg-white p-4 dark:bg-stone-950 dark:border-stone-800">
       <SectionTitle
         kicker="FLOOR PLAN (ABSTRACT)"
         title="Left wing • Hallway • Right wing"
@@ -904,13 +903,14 @@ function WingGrid({
         }
       />
 
-      {/* Small screens: stacked fallback. Tablet and up will use aligned map grid. */}
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:hidden">
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Left wing */}
-        <div className="space-y-2">
-          <div className="text-[10px] text-stone-400 dark:text-stone-500">Left wing</div>
+        <div className="space-y-2 max-[640px]:min-w-[260px]">
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">
+            Left wing
+          </div>
           {left.length === 0 && (
-            <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-[11px] text-stone-400 dark:text-stone-500 dark:bg-stone-950/40 dark:border-stone-800">
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-[11px] text-stone-400 dark:border-stone-800 dark:bg-stone-900/40">
               No rooms on this level.
             </div>
           )}
@@ -929,54 +929,65 @@ function WingGrid({
         </div>
 
         {/* Hallway slots */}
-        <div className="rounded-2xl border border-stone-200 bg-stone-50/70 p-3 dark:bg-stone-950/30 dark:border-stone-800">
+        <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3 max-[640px]:min-w-[260px] dark:border-stone-800 dark:bg-stone-900/40">
           <div className="flex items-center justify-between">
-            <div className="text-[10px] text-stone-400 dark:text-stone-500 uppercase tracking-widest">
+            <div className="text-[10px] text-stone-400 uppercase tracking-widest dark:text-stone-500">
               Hallway cues
             </div>
             {editable && (
-              <div className="text-[10px] text-stone-400 dark:text-stone-500">drop to reposition</div>
+              <div className="text-[10px] text-stone-400 dark:text-stone-500">
+                drop to reposition
+              </div>
             )}
           </div>
 
-          <div className="mt-3 space-y-2">
-            {Array.from({ length: slotCount }).map((_, idx) => {
-              const here = lmByIndex.get(idx) || [];
-              return (
-                <div
-                  key={idx}
-                  onDragOver={allowDrop}
-                  onDrop={(e) => dropOnSlot(e, idx)}
-                  className={
-                    "min-h-[38px] rounded-xl border px-2 py-2 flex flex-wrap gap-1.5 items-center " +
-                    (editable
-                      ? "bg-white border-stone-200 dark:bg-stone-900 dark:border-stone-800"
-                      : "bg-stone-100/70 border-stone-200 dark:bg-stone-950/50 dark:border-stone-800")
-                  }
-                >
-                  <span className="text-[9px] text-stone-400 dark:text-stone-500 mr-1">{idx + 1}</span>
-                  {here.length === 0 ? (
-                    <span className="text-[10px] text-stone-400 dark:text-stone-500">
-                      {editable ? "Drop amenity here" : "—"}
+          {/* Subtle "spine" hint for better map feel */}
+          <div className="relative mt-3">
+            <span className="pointer-events-none absolute left-5 top-0 bottom-0 w-px bg-stone-200 dark:bg-stone-800" />
+
+            <div className="space-y-2">
+              {Array.from({ length: slotCount }).map((_, idx) => {
+                const here = lmByIndex.get(idx) || [];
+                return (
+                  <div
+                    key={idx}
+                    onDragOver={allowDrop}
+                    onDrop={(e) => dropOnSlot(e, idx)}
+                    className={
+                      "min-h-[38px] rounded-xl border px-2 py-2 flex flex-wrap gap-1.5 items-center " +
+                      (editable
+                        ? "bg-white border-stone-200 dark:bg-stone-950 dark:border-stone-800"
+                        : "bg-stone-100/70 border-stone-200 dark:bg-stone-900/50 dark:border-stone-800")
+                    }
+                  >
+                    <span className="text-[9px] text-stone-400 dark:text-stone-500 ml-2 mr-1">
+                      {idx + 1}
                     </span>
-                  ) : (
-                    here.map((lm) => (
-                      <LandmarkChip
-                        key={lm.id}
-                        landmark={lm}
-                        editable={editable}
-                        onDragStart={handleDragStart}
-                      />
-                    ))
-                  )}
-                </div>
-              );
-            })}
+                    {here.length === 0 ? (
+                      <span className="text-[10px] text-stone-400 dark:text-stone-500">
+                        {editable ? "Drop amenity here" : "—"}
+                      </span>
+                    ) : (
+                      here.map((lm) => (
+                        <LandmarkChip
+                          key={lm.id}
+                          landmark={lm}
+                          editable={editable}
+                          onDragStart={handleDragStart}
+                        />
+                      ))
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {landmarks.length > 0 && (
             <div className="mt-3">
-              <div className="text-[10px] text-stone-400 dark:text-stone-500 mb-1">Current landmarks</div>
+              <div className="text-[10px] text-stone-400 dark:text-stone-500 mb-1">
+                Current landmarks
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {landmarks.map((lm) => (
                   <LandmarkChip
@@ -992,10 +1003,12 @@ function WingGrid({
         </div>
 
         {/* Right wing */}
-        <div className="space-y-2">
-          <div className="text-[10px] text-stone-400 dark:text-stone-500">Right wing</div>
+        <div className="space-y-2 max-[640px]:min-w-[260px]">
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">
+            Right wing
+          </div>
           {right.length === 0 && (
-            <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-[11px] text-stone-400 dark:text-stone-500 dark:bg-stone-950/40 dark:border-stone-800">
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-[11px] text-stone-400 dark:border-stone-800 dark:bg-stone-900/40">
               No rooms on this level.
             </div>
           )}
@@ -1011,91 +1024,6 @@ function WingGrid({
               onAddSignal={onAddSignal}
             />
           ))}
-        </div>
-      </div>
-
-      {/* Tablet and up: aligned row grid to preserve the layout"s essence */}
-      <div className="mt-4 hidden sm:block">
-        <div className="grid sm:grid-cols-[minmax(0,1fr)_200px_minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_240px_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_300px_minmax(0,1fr)] gap-4">
-          <div className="text-[10px] text-stone-400 dark:text-stone-500">Left wing</div>
-          <div className="text-[10px] text-stone-400 dark:text-stone-500 uppercase tracking-widest">Hallway cues</div>
-          <div className="text-[10px] text-stone-400 dark:text-stone-500">Right wing</div>
-
-          {Array.from({ length: slotCount }).map((_, idx) => {
-            const l = leftOrdered[idx];
-            const r = rightOrdered[idx];
-            const here = lmByIndex.get(idx) || [];
-            return (
-              <React.Fragment key={`row-${idx}`}>
-                <div>
-                  {l ? (
-                    <RoomCard
-                      room={l}
-                      prefs={prefs}
-                      baseRate={baseRate}
-                      selected={selectedRoom?.number === l.number}
-                      onSelect={onSelectRoom}
-                      mode={mode}
-                      onAddSignal={onAddSignal}
-                    />
-                  ) : (
-                    <div className="min-h-[78px] rounded-2xl border border-dashed border-stone-200 bg-stone-50/50 p-3 text-[10px] text-stone-400 dark:border-stone-800 dark:bg-stone-950/20 dark:text-stone-500">
-                      —
-                    </div>
-                  )}
-                </div>
-
-                <div
-                  onDragOver={allowDrop}
-                  onDrop={(e) => dropOnSlot(e, idx)}
-                  className={
-                    "min-h-[78px] rounded-2xl border px-3 py-3 flex flex-col justify-center gap-2 " +
-                    (editable
-                      ? "bg-white border-stone-200 dark:bg-stone-900 dark:border-stone-800"
-                      : "bg-stone-50/70 border-stone-200 dark:bg-stone-950/30 dark:border-stone-800")
-                  }
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] text-stone-400 dark:text-stone-500">{idx + 1}</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {here.length === 0 ? (
-                        <span className="text-[10px] text-stone-400 dark:text-stone-500">
-                          {editable ? "Drop amenity here" : "—"}
-                        </span>
-                      ) : (
-                        here.map((lm) => (
-                          <LandmarkChip
-                            key={lm.id}
-                            landmark={lm}
-                            editable={editable}
-                            onDragStart={handleDragStart}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  {r ? (
-                    <RoomCard
-                      room={r}
-                      prefs={prefs}
-                      baseRate={baseRate}
-                      selected={selectedRoom?.number === r.number}
-                      onSelect={onSelectRoom}
-                      mode={mode}
-                      onAddSignal={onAddSignal}
-                    />
-                  ) : (
-                    <div className="min-h-[78px] rounded-2xl border border-dashed border-stone-200 bg-stone-50/50 p-3 text-[10px] text-stone-400 dark:border-stone-800 dark:bg-stone-950/20 dark:text-stone-500">
-                      —
-                    </div>
-                  )}
-                </div>
-              </React.Fragment>
-            );
-          })}
         </div>
       </div>
     </div>
@@ -1128,11 +1056,11 @@ function LandmarkPalette({
     Math.max(0, ...(curr.map((l) => l.index) || [0])) + 1;
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4 dark:bg-stone-950/40 dark:border-stone-800">
+    <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-900/40">
       <SectionTitle
         kicker="AUTHORING TOOLS"
         title="Add landmarks"
-        right={<span className="text-[10px] text-stone-400 dark:text-stone-500">light edit layer</span>}
+        right={<span className="text-[10px] text-stone-400">light edit layer</span>}
       />
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -1140,7 +1068,7 @@ function LandmarkPalette({
           <button
             key={t}
             onClick={() => onAdd(makeLandmark(t, nextIndex(landmarks)))}
-            className="px-3 py-1.5 rounded-xl text-[10px] font-medium border border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50 transition dark:bg-stone-900 dark:border-stone-800 dark:text-stone-200 dark:hover:border-stone-700"
+            className="px-3 py-1.5 rounded-xl text-[10px] font-medium border border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50 transition dark:border-stone-800 dark:bg-stone-950 dark:hover:bg-stone-900"
           >
             {AMENITY_META[t]?.label ?? "Amenity"}
           </button>
@@ -1176,7 +1104,7 @@ function Recommendations({
 
   if (rooms.length === 0) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-900 dark:border-stone-800">
+      <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-950 dark:border-stone-800">
         <SectionTitle kicker="RECOMMENDATIONS" title="No rooms on this level" />
         <p className="mt-2 text-[11px] text-stone-400 dark:text-stone-500">
           This floor is likely amenity-focused.
@@ -1186,7 +1114,7 @@ function Recommendations({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-900 dark:border-stone-800">
+    <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-950 dark:border-stone-800">
       <SectionTitle kicker="RECOMMENDATIONS" title="Top matches" />
 
       <div className="mt-3 space-y-2">
@@ -1195,29 +1123,42 @@ function Recommendations({
           return (
             <div
               key={r.id}
-              className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 dark:bg-stone-950/40 dark:border-stone-800"
+              className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-800 dark:bg-stone-900/40"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-stone-400 dark:text-stone-500">#{idx + 1}</span>
-                  <span className="text-xs font-semibold text-stone-900 dark:text-stone-50">{r.number}</span>
-                  <span className="text-[10px] text-stone-400 dark:text-stone-500">{r.wing}</span>
+                  <span className="text-[10px] text-stone-400">#{idx + 1}</span>
+                  <span className="text-xs font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+                    {r.number}
+                  </span>
+                  <span className="text-[10px] text-stone-400">{r.wing}</span>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] text-stone-400 dark:text-stone-500">score</div>
-                  <div className="text-xs font-semibold text-stone-900 dark:text-stone-50">{m.score}</div>
+                  <div className="text-[10px] text-stone-400">score</div>
+                  <div className="text-xs font-semibold text-stone-900 dark:text-stone-50">
+                    {m.score}
+                  </div>
                 </div>
               </div>
               <div className="mt-1 flex items-center justify-between">
                 <div className="flex gap-1.5">
-                  <Badge label={`Quiet ${r.quiet}`} tone={r.quiet >= 7 ? "good" : r.quiet <= 4 ? "warn" : "neutral"} />
-                  <Badge label={`Love ${r.love}`} tone={r.love >= 4 ? "good" : "neutral"} />
+                  <Badge
+                    label={`Quiet ${r.quiet}`}
+                    tone={r.quiet >= 7 ? "good" : r.quiet <= 4 ? "warn" : "neutral"}
+                  />
+                  <Badge
+                    label={`Love ${r.love}`}
+                    tone={r.love >= 4 ? "good" : "neutral"}
+                  />
                   {(r.tags || []).slice(0, 2).map((t) => (
                     <Badge key={t} label={t} />
                   ))}
                 </div>
-                <div className="text-[10px] text-stone-500">
-                  est. ${rate}/n {m.suggestedDelta ? `(${m.suggestedDelta > 0 ? "+" : ""}${m.suggestedDelta})` : ""}
+                <div className="text-[10px] text-stone-500 dark:text-stone-400">
+                  est. ${rate}/n{" "}
+                  {m.suggestedDelta
+                    ? `(${m.suggestedDelta > 0 ? "+" : ""}${m.suggestedDelta})`
+                    : ""}
                 </div>
               </div>
             </div>
@@ -1254,33 +1195,43 @@ function GuestSignalModal({
     imageUrl: "",
   });
 
-  // Reset when opening a new room
   React.useEffect(() => {
     if (room) {
-      setDraft({ quiet: 4, love: 4, convenience: 3, tag: "", note: "", imageUrl: "" });
+      setDraft({
+        quiet: 4,
+        love: 4,
+        convenience: 3,
+        tag: "",
+        note: "",
+        imageUrl: "",
+      });
     }
   }, [room?.id]);
 
   if (!room) return null;
 
   const inputCls =
-    "w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-200 dark:bg-stone-900 dark:border-stone-800 dark:text-stone-100 dark:placeholder:text-stone-500";
+    "w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-200 dark:border-stone-800 dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:ring-stone-700";
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/20" onClick={onClose} />
-      <div className="relative w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl bg-white border border-stone-200 shadow-xl p-5 sm:p-6 m-0 sm:m-6 dark:bg-stone-900 dark:border-stone-800">
+      <div className="absolute inset-0 bg-black/20 dark:bg-black/50" onClick={onClose} />
+      <div className="relative w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl bg-white border border-stone-200 shadow-xl p-5 sm:p-6 m-0 sm:m-6 dark:bg-stone-950 dark:border-stone-800">
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-xs tracking-widest text-stone-400 dark:text-stone-500">GUEST SIGNAL</div>
-            <div className="text-lg font-semibold text-stone-900 dark:text-stone-50">Room {room.number}</div>
-            <div className="text-[11px] text-stone-500">
+            <div className="text-xs tracking-widest text-stone-400 dark:text-stone-500">
+              GUEST SIGNAL
+            </div>
+            <div className="text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+              Room {room.number}
+            </div>
+            <div className="text-[11px] text-stone-500 dark:text-stone-400">
               Lightweight community input (Waze-lite)
             </div>
           </div>
           <button
             onClick={onClose}
-            className="h-8 w-8 rounded-xl border border-stone-200 bg-stone-50 text-stone-600 hover:bg-white dark:bg-stone-950/40 dark:border-stone-800 dark:text-stone-300 dark:hover:bg-stone-900"
+            className="h-8 w-8 rounded-xl border border-stone-200 bg-stone-50 text-stone-600 hover:bg-white dark:border-stone-800 dark:bg-stone-900/40 dark:text-stone-200 dark:hover:bg-stone-900"
             aria-label="Close"
           >
             ✕
@@ -1288,61 +1239,42 @@ function GuestSignalModal({
         </div>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3 dark:bg-stone-950/40 dark:border-stone-800">
-            <div className="text-[10px] text-stone-400 dark:text-stone-500">Quiet</div>
-            <input
-              type="range"
-              min={1}
-              max={5}
-              step={1}
-              value={draft.quiet}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, quiet: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 }))
-              }
-              className="mt-1 w-full accent-stone-900"
-            />
-            <div className="text-xs font-medium text-stone-900 dark:text-stone-50">{draft.quiet}/5</div>
-          </div>
-
-          <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3 dark:bg-stone-950/40 dark:border-stone-800">
-            <div className="text-[10px] text-stone-400 dark:text-stone-500">Love</div>
-            <input
-              type="range"
-              min={1}
-              max={5}
-              step={1}
-              value={draft.love}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, love: Number(e.target.value) as 1 | 2 | 3 | 4 | 5 }))
-              }
-              className="mt-1 w-full accent-stone-900"
-            />
-            <div className="text-xs font-medium text-stone-900 dark:text-stone-50">{draft.love}/5</div>
-          </div>
-
-          <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3 dark:bg-stone-950/40 dark:border-stone-800">
-            <div className="text-[10px] text-stone-400 dark:text-stone-500">Convenience</div>
-            <input
-              type="range"
-              min={1}
-              max={5}
-              step={1}
-              value={draft.convenience}
-              onChange={(e) =>
-                setDraft((d) => ({
-                  ...d,
-                  convenience: Number(e.target.value) as 1 | 2 | 3 | 4 | 5,
-                }))
-              }
-              className="mt-1 w-full accent-stone-900"
-            />
-            <div className="text-xs font-medium text-stone-900 dark:text-stone-50">{draft.convenience}/5</div>
-          </div>
+          {[{ key: "quiet", label: "Quiet" }, { key: "love", label: "Love" }, { key: "convenience", label: "Convenience" }].map(
+            (item) => (
+              <div
+                key={item.key}
+                className="rounded-2xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/40"
+              >
+                <div className="text-[10px] text-stone-400 dark:text-stone-500">
+                  {item.label}
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={5}
+                  step={1}
+                  value={draft[item.key as keyof SignalDraft] as number}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      [item.key]: Number(e.target.value),
+                    }))
+                  }
+                  className="mt-1 w-full accent-stone-900 dark:accent-stone-100"
+                />
+                <div className="text-xs font-medium text-stone-900 dark:text-stone-50">
+                  {(draft[item.key as keyof SignalDraft] as number)}/5
+                </div>
+              </div>
+            )
+          )}
         </div>
 
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <div className="text-[10px] text-stone-400 dark:text-stone-500 mb-1">Tag (optional)</div>
+            <div className="text-[10px] text-stone-400 dark:text-stone-500 mb-1">
+              Tag (optional)
+            </div>
             <input
               value={draft.tag}
               onChange={(e) => setDraft((d) => ({ ...d, tag: e.target.value }))}
@@ -1351,7 +1283,9 @@ function GuestSignalModal({
             />
           </div>
           <div>
-            <div className="text-[10px] text-stone-400 dark:text-stone-500 mb-1">Image URL (optional)</div>
+            <div className="text-[10px] text-stone-400 dark:text-stone-500 mb-1">
+              Image URL (optional)
+            </div>
             <input
               value={draft.imageUrl}
               onChange={(e) =>
@@ -1364,7 +1298,9 @@ function GuestSignalModal({
         </div>
 
         <div className="mt-3">
-          <div className="text-[10px] text-stone-400 dark:text-stone-500 mb-1">Note (optional)</div>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500 mb-1">
+            Note (optional)
+          </div>
           <textarea
             value={draft.note}
             onChange={(e) => setDraft((d) => ({ ...d, note: e.target.value }))}
@@ -1377,7 +1313,7 @@ function GuestSignalModal({
         <div className="mt-4 flex items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-3 py-2 rounded-xl text-xs border border-stone-200 bg-stone-50 hover:bg-white dark:bg-stone-950/40 dark:border-stone-800 dark:text-stone-200 dark:hover:bg-stone-900"
+            className="px-3 py-2 rounded-xl text-xs border border-stone-200 bg-stone-50 hover:bg-white dark:border-stone-800 dark:bg-stone-900/40 dark:hover:bg-stone-900"
           >
             Cancel
           </button>
@@ -1386,10 +1322,97 @@ function GuestSignalModal({
               onSubmit(room, draft);
               onClose();
             }}
-            className="px-4 py-2 rounded-xl text-xs font-medium bg-stone-900 text-white hover:bg-stone-800"
+            className="px-4 py-2 rounded-xl text-xs font-medium bg-stone-900 text-white hover:bg-stone-800 dark:bg-stone-50 dark:text-stone-900 dark:hover:bg-white"
           >
             Save signal
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -----------------------------
+// Selected room inspector
+// -----------------------------
+
+function SelectedRoomPanel({
+  room,
+  prefs,
+  baseRate,
+  onClear,
+}: {
+  room: Room;
+  prefs: Prefs;
+  baseRate: number;
+  onClear: () => void;
+}) {
+  const match = computeMatch(room, prefs);
+  const delta = match.suggestedDelta;
+  const finalRate = baseRate + delta;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-950 dark:border-stone-800">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-xs tracking-[0.22em] text-stone-400 dark:text-stone-500">
+            SELECTED ROOM
+          </div>
+          <div className="text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+            Room {room.number}
+            <span className="ml-2 text-[10px] text-stone-400 uppercase tracking-widest">
+              {room.wing} wing
+            </span>
+          </div>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            <Badge label={`Quiet ${room.quiet}`} tone={room.quiet >= 7 ? "good" : room.quiet <= 4 ? "warn" : "neutral"} />
+            <Badge label={`Love ${room.love}`} tone={room.love >= 4 ? "good" : "neutral"} />
+            <Badge label={`Access ${room.access}`} />
+            <Badge label={`View ${room.view}`} />
+          </div>
+        </div>
+
+        <button
+          onClick={onClear}
+          className="px-2.5 py-1.5 rounded-lg text-[10px] font-medium border border-stone-200 bg-stone-50 hover:bg-white dark:border-stone-800 dark:bg-stone-900/40 dark:hover:bg-stone-900"
+        >
+          Clear
+        </button>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/40">
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Match score</div>
+          <div className="text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+            {match.score}
+          </div>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Confidence: {match.confidence}</div>
+        </div>
+        <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/40">
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Suggested delta</div>
+          <div className="text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+            {delta > 0 ? `+${delta}` : `${delta}`}
+          </div>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Relative to base</div>
+        </div>
+        <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/40">
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Est. rate</div>
+          <div className="text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+            ${finalRate}
+          </div>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Per night (mock)</div>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-900/40">
+        <div className="text-[10px] text-stone-400 dark:text-stone-500">Signal summary</div>
+        <div className="mt-1 text-xs text-stone-700 dark:text-stone-200">
+          {room.notes && room.notes.trim().length > 0
+            ? room.notes
+            : "No narrative signal yet. Community input will appear here."}
+        </div>
+        <div className="mt-2 text-[10px] text-stone-400 dark:text-stone-500">
+          {room.reports} community pings
         </div>
       </div>
     </div>
@@ -1412,7 +1435,7 @@ export default function LayoutIntelligenceCopilotMVP() {
   });
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [signalTarget, setSignalTarget] = useState<Room | null>(null);
-  const [leftTab, setLeftTab] = useState<"overview" | "prefs" | "recs">("overview");
+
   const floor = useMemo(
     () => hotel.floors.find((f) => f.number === activeFloor) ?? hotel.floors[0],
     [hotel, activeFloor]
@@ -1421,10 +1444,6 @@ export default function LayoutIntelligenceCopilotMVP() {
   const handleJump = (n: number) => {
     setActiveFloor(n);
     setSelectedRoom(null);
-  };
-
-  const handleSelectRoom = (r: Room) => {
-    setSelectedRoom((curr) => (curr?.id === r.id ? null : r));
   };
 
   const updateLandmarksForFloor = (floorNumber: number, next: Landmark[]) => {
@@ -1443,7 +1462,6 @@ export default function LayoutIntelligenceCopilotMVP() {
   };
 
   const handleSubmitSignal = (room: Room, draft: SignalDraft) => {
-    // Minimal demo merge: update room tags/notes/reports/love/quiet/access heuristically.
     setHotel((h) => ({
       ...h,
       floors: h.floors.map((f) => {
@@ -1451,11 +1469,21 @@ export default function LayoutIntelligenceCopilotMVP() {
         const updatedRooms = f.rooms.map((r) => {
           if (r.id !== room.id) return r;
 
-          const newTags = [...new Set([...(r.tags || []), ...(draft.tag ? [draft.tag.trim()] : [])])].filter(Boolean);
-          const mergedNote = [r.notes, draft.note].filter(Boolean).join(" • ").slice(0, 140);
+          const newTags = [
+            ...new Set([
+              ...(r.tags || []),
+              ...(draft.tag ? [draft.tag.trim()] : []),
+            ]),
+          ].filter(Boolean);
+
+          const mergedNote = [r.notes, draft.note]
+            .filter(Boolean)
+            .join(" • ")
+            .slice(0, 140);
 
           const quietBoost = draft.quiet >= 4 ? 1 : draft.quiet <= 2 ? -1 : 0;
-          const accessBoost = draft.convenience >= 4 ? 1 : draft.convenience <= 2 ? -1 : 0;
+          const accessBoost =
+            draft.convenience >= 4 ? 1 : draft.convenience <= 2 ? -1 : 0;
 
           return {
             ...r,
@@ -1473,153 +1501,96 @@ export default function LayoutIntelligenceCopilotMVP() {
   };
 
   return (
-    <div
-      className={
-        "min-h-screen font-sans transition-colors " +
-        (theme === "dark"
-          ? "dark bg-stone-950 text-stone-50"
-          : "bg-stone-50 text-stone-900")
-      }
-    >
+    <div className={"min-h-screen font-sans " + (theme === "dark" ? "dark" : "")}> 
+      <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <HotelHero
+            hotel={hotel}
+            mode={mode}
+            onMode={setMode}
+            theme={theme}
+            onTheme={setTheme}
+          />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <HotelHero
-  hotel={hotel}
-  mode={mode}
-  onMode={setMode}
-  theme={theme}
-  onTheme={setTheme}
-/>
-
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Left rail */}
-          <aside className="md:col-span-4 lg:col-span-3 xl:col-span-2 space-y-4 min-w-0">
-  {/* Left-rail progressive disclosure */}
-  <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-1 w-full overflow-hidden dark:bg-stone-900 dark:border-stone-800">
-    <div className="flex items-center gap-1 rounded-xl bg-stone-100 p-1 border border-stone-200 dark:bg-stone-900 dark:border-stone-800">
-      <button
-        onClick={() => setLeftTab("overview")}
-        className={
-          "flex-1 px-2 py-1 text-[11px] whitespace-nowrap rounded-lg transition-all " +
-          (leftTab === "overview"
-            ? "bg-white shadow-sm text-stone-900 dark:bg-stone-100 dark:text-stone-900"
-            : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100")
-        }
-      >
-        <span className="hidden sm:inline">Overview</span>
-        <span className="sm:hidden">Over</span>
-      </button>
-      <button
-        onClick={() => setLeftTab("prefs")}
-        className={
-          "flex-1 px-2 py-1 text-[11px] whitespace-nowrap rounded-lg transition-all " +
-          (leftTab === "prefs"
-            ? "bg-white shadow-sm text-stone-900 dark:bg-stone-100 dark:text-stone-900"
-            : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100")
-        }
-      >
-        <span className="hidden sm:inline">Preferences</span>
-        <span className="sm:hidden">Prefs</span>
-      </button>
-      <button
-        onClick={() => setLeftTab("recs")}
-        className={
-          "flex-1 px-2 py-1 text-[11px] whitespace-nowrap rounded-lg transition-all " +
-          (leftTab === "recs"
-            ? "bg-white shadow-sm text-stone-900 dark:bg-stone-100 dark:text-stone-900"
-            : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100")
-        }
-      >
-        <span className="hidden sm:inline">Picks</span>
-        <span className="sm:hidden">Top</span>
-      </button>
-    </div>
-  </div>
-
-  {leftTab === "overview" && (
-    <FloorNavigator hotel={hotel} activeFloor={activeFloor} onJump={handleJump} />
-  )}
-
-  {leftTab === "prefs" && (
-    <PreferencePanel prefs={prefs} setPrefs={setPrefs} />
-  )}
-
-  {leftTab === "recs" && (
-    <Recommendations rooms={floor.rooms} prefs={prefs} baseRate={hotel.baseRate} />
-  )}
-</aside>
-
-          {/* Main canvas */}
-          <section className="md:col-span-8 lg:col-span-9 xl:col-span-10 space-y-4 min-w-0">
-            <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-4 dark:bg-stone-900 dark:border-stone-800">
-              <SectionTitle
-                kicker={`FLOOR ${floor.number}`}
-                title={floor.name}
-                right={
-                  <div className="flex items-center gap-2">
-                    {floor.feature && (
-                      <Badge label={floor.feature} />
-                    )}
-                    <Badge label={floor.rooms.length ? `${floor.rooms.length} rooms` : "amenity"} />
-                  </div>
-                }
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left rail */}
+            <aside className="lg:col-span-4 space-y-4">
+              <FloorNavigator
+                hotel={hotel}
+                activeFloor={activeFloor}
+                onJump={handleJump}
               />
-              <p className="mt-1 text-[10px] text-stone-400 dark:text-stone-500">
-                Preference-first floor view for fewer quiet-location mismatches.
-              </p>
-            </div>
-
-            {mode === "staff" && (
-              <LandmarkPalette
-                landmarks={floor.landmarks}
-                onAdd={(lm) => addLandmarkToFloor(floor.number, lm)}
+              <PreferencePanel prefs={prefs} setPrefs={setPrefs} />
+              <Recommendations
+                rooms={floor.rooms}
+                prefs={prefs}
+                baseRate={hotel.baseRate}
               />
-            )}
+            </aside>
 
-            <WingGrid
-              rooms={floor.rooms}
-              landmarks={floor.landmarks}
-              prefs={prefs}
-              baseRate={hotel.baseRate}
-              selectedRoom={selectedRoom}
-              onSelectRoom={handleSelectRoom} 
-              mode={mode}
-              onUpdateLandmarks={(lms) => updateLandmarksForFloor(floor.number, lms)}
-              onAddSignal={(r) => setSignalTarget(r)}
-            />
-
-            {/* Selected room detail (light) */}
-            {selectedRoom && (
-              <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-900 dark:border-stone-800">
-                <SectionTitle kicker="ROOM DETAIL" title={`Room ${selectedRoom.number}`} />
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:bg-stone-950/40 dark:border-stone-800">
-                    <div className="text-[10px] text-stone-400 dark:text-stone-500">Quiet</div>
-                    <div className="text-sm font-semibold text-stone-900 dark:text-stone-50">{selectedRoom.quiet}/10</div>
-                  </div>
-                  <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:bg-stone-950/40 dark:border-stone-800">
-                    <div className="text-[10px] text-stone-400 dark:text-stone-500">View</div>
-                    <div className="text-sm font-semibold text-stone-900 dark:text-stone-50">{selectedRoom.view}/10</div>
-                  </div>
-                  <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:bg-stone-950/40 dark:border-stone-800">
-                    <div className="text-[10px] text-stone-400 dark:text-stone-500">Access</div>
-                    <div className="text-sm font-semibold text-stone-900 dark:text-stone-50">{selectedRoom.access}/10</div>
-                  </div>
-                </div>
-                <div className="mt-3 text-xs text-stone-600 dark:text-stone-300">
-                  {(selectedRoom.notes && selectedRoom.notes.trim()) || "No additional notes yet."}
-                </div>
+            {/* Main canvas */}
+            <section className="lg:col-span-8 space-y-4">
+              <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-950 dark:border-stone-800">
+                <SectionTitle
+                  kicker={`FLOOR ${floor.number}`}
+                  title={floor.name}
+                  right={
+                    <div className="flex items-center gap-2">
+                      {floor.feature && <Badge label={floor.feature} />}
+                      <Badge
+                        label={
+                          floor.rooms.length
+                            ? `${floor.rooms.length} rooms`
+                            : "amenity"
+                        }
+                      />
+                    </div>
+                  }
+                />
+                <p className="mt-2 text-[11px] text-stone-400 dark:text-stone-500">
+                  This is an abstracted, staff-friendly representation meant to reduce preference mismatches.
+                </p>
               </div>
-            )}
-          </section>
-        </div>
-      </div>
 
-      <GuestSignalModal
-        room={signalTarget}
-        onClose={() => setSignalTarget(null)}
-        onSubmit={handleSubmitSignal}
-      />
+              {mode === "staff" && (
+                <LandmarkPalette
+                  landmarks={floor.landmarks}
+                  onAdd={(lm) => addLandmarkToFloor(floor.number, lm)}
+                />
+              )}
+
+              <WingGrid
+                rooms={floor.rooms}
+                landmarks={floor.landmarks}
+                prefs={prefs}
+                baseRate={hotel.baseRate}
+                selectedRoom={selectedRoom}
+                onSelectRoom={setSelectedRoom}
+                mode={mode}
+                onUpdateLandmarks={(lms) =>
+                  updateLandmarksForFloor(floor.number, lms)
+                }
+                onAddSignal={(r) => setSignalTarget(r)}
+              />
+
+              {selectedRoom && (
+                <SelectedRoomPanel
+                  room={selectedRoom}
+                  prefs={prefs}
+                  baseRate={hotel.baseRate}
+                  onClear={() => setSelectedRoom(null)}
+                />
+              )}
+            </section>
+          </div>
+        </div>
+
+        <GuestSignalModal
+          room={signalTarget}
+          onClose={() => setSignalTarget(null)}
+          onSubmit={handleSubmitSignal}
+        />
+      </div>
     </div>
   );
 }
