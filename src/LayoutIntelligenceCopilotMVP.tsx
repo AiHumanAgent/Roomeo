@@ -422,11 +422,6 @@ function ThemeToggle({
     </div>
   );
 }
-
-// -----------------------------
-// Hero
-// -----------------------------
-
 function HotelHero({
   hotel,
   mode,
