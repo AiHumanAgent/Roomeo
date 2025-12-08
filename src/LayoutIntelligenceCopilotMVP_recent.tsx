@@ -8,14 +8,13 @@ import React, { useMemo, useRef, useState } from "react";
  *
  * Included:
  * - Multi-floor abstract hotel
- * - Hotel-in-totality floor navigator (inline, compact)
+ * - Hotel-in-totality floor navigator
  * - Guest vs Staff mode
  * - Preferences (quiet vs convenience, avoid elevator, premium tolerance)
  * - Staff authoring: add landmarks + drag into hallway slots
  * - Guest Waze-lite signals modal (simple)
- * - Simple recommendations per active floor (top 3, single row)
+ * - Simple recommendations per active floor
  * - Global Light/Dark visual theme
- * - Small-screen horizontal “three-lane scroll” for wings/hallway
  *
  * Not included yet (by design):
  * - Voice/video/sketch ingestion
@@ -297,8 +296,6 @@ function computeMatch(room: Room, prefs: Prefs) {
     room.quiet * qw + room.access * aw + room.view * 0.15 - elevatorPenalty;
   const score = clamp(Math.round(raw * 10), 0, 100);
 
-  // Premium tolerance is a CAP, not an override.
-  // It limits how much of the suggested premium we are willing to apply.
   const quietBias = Math.round((room.quiet - 5) * 1.2 * qw * 2);
   const suggested = clamp(quietBias + (room.baseDelta || 0), -15, 18);
   const applied = clamp(suggested, -15, prefs.premiumTolerance);
@@ -370,13 +367,13 @@ function ModeToggle({
   onChange: (m: Mode) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 items-center gap-1 rounded-lg bg-stone-100 p-0.5 border border-stone-200 dark:bg-stone-900 dark:border-stone-800">
+    <div className="grid grid-cols-2 items-center gap-0.5 rounded-md bg-stone-100 p-0.5 border border-stone-200 dark:bg-stone-900 dark:border-stone-800">
       {(["guest", "staff"] as const).map((m) => (
         <button
           key={m}
           onClick={() => onChange(m)}
           className={
-            "px-2 py-1 text-[10px] rounded-md transition-all " +
+            "px-1.5 py-0.5 text-[9px] rounded-md transition-all " +
             (mode === m
               ? "bg-white shadow-sm text-stone-900 dark:bg-stone-100 dark:text-stone-900"
               : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100")
@@ -402,13 +399,13 @@ function ThemeToggle({
   onChange: (t: Theme) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 items-center gap-1 rounded-lg bg-stone-100 p-0.5 border border-stone-200 dark:bg-stone-900 dark:border-stone-800">
+    <div className="grid grid-cols-2 items-center gap-0.5 rounded-md bg-stone-100 p-0.5 border border-stone-200 dark:bg-stone-900 dark:border-stone-800">
       {(["light", "dark"] as const).map((t) => (
         <button
           key={t}
           onClick={() => onChange(t)}
           className={
-            "px-2 py-1 text-[10px] rounded-md transition-all " +
+            "px-1.5 py-0.5 text-[9px] rounded-md transition-all " +
             (theme === t
               ? "bg-white shadow-sm text-stone-900 dark:bg-stone-100 dark:text-stone-900"
               : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100")
@@ -484,10 +481,10 @@ function HotelHero({
       />
 
       <div className="relative p-2 sm:p-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-1.5">
           {/* Brand */}
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 bg-stone-900 rounded-2xl flex items-center justify-center text-white font-bold text-sm dark:bg-stone-50 dark:text-stone-900">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-stone-900 rounded-xl sm:rounded-2xl flex items-center justify-center text-white font-bold text-xs sm:text-sm dark:bg-stone-50 dark:text-stone-900">
               R
             </div>
             <div className="min-w-0">
@@ -506,7 +503,7 @@ function HotelHero({
               onClick={jumpDown}
               disabled={!canDown}
               className={
-                "h-7 w-7 rounded-lg border text-[10px] font-medium transition " +
+                "h-7 w-7 rounded-lg border text-[10px] font-medium transition flex items-center justify-center " +
                 (canDown
                   ? "bg-white border-stone-200 text-stone-700 hover:border-stone-300 hover:bg-stone-50 dark:bg-stone-950 dark:border-stone-800 dark:text-stone-200 dark:hover:border-stone-700"
                   : "bg-stone-100 border-stone-200 text-stone-300 cursor-not-allowed dark:bg-stone-900/40 dark:border-stone-800 dark:text-stone-600")
@@ -521,6 +518,7 @@ function HotelHero({
               <div className="h-9 w-9 rounded-full bg-white border border-stone-200 flex items-center justify-center text-sm font-semibold text-stone-900 dark:bg-stone-100 dark:border-stone-200 dark:text-stone-900">
                 {current.number}
               </div>
+              {/* Keep detail off mobile, show on >= sm */}
               <div className="hidden sm:block min-w-0">
                 <div className="text-xs font-semibold text-stone-900 dark:text-stone-50 truncate">
                   {current.name}
@@ -536,7 +534,7 @@ function HotelHero({
               onClick={jumpUp}
               disabled={!canUp}
               className={
-                "h-7 w-7 rounded-lg border text-[10px] font-medium transition " +
+                "h-7 w-7 rounded-lg border text-[10px] font-medium transition flex items-center justify-center " +
                 (canUp
                   ? "bg-white border-stone-200 text-stone-700 hover:border-stone-300 hover:bg-stone-50 dark:bg-stone-950 dark:border-stone-800 dark:text-stone-200 dark:hover:border-stone-700"
                   : "bg-stone-100 border-stone-200 text-stone-300 cursor-not-allowed dark:bg-stone-900/40 dark:border-stone-800 dark:text-stone-600")
@@ -549,7 +547,7 @@ function HotelHero({
           </div>
 
           {/* Toggles */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <ThemeToggle theme={theme} onChange={onTheme} />
             <ModeToggle mode={mode} onChange={onMode} />
           </div>
@@ -558,6 +556,11 @@ function HotelHero({
     </div>
   );
 }
+
+// -----------------------------
+// Navigator
+// -----------------------------
+
 
 // -----------------------------
 // Preferences
@@ -582,11 +585,7 @@ function PreferencePanel({
       <SectionTitle
         kicker="PREFERENCES"
         title="Quiet vs Convenience"
-        right={
-          <span className="text-[11px] text-stone-500 dark:text-stone-400">
-            {label}
-          </span>
-        }
+        right={<span className="text-[11px] text-stone-500 dark:text-stone-400">{label}</span>}
       />
 
       {/* Desktop/tablet: slider on its own line */}
@@ -620,10 +619,7 @@ function PreferencePanel({
             max={100}
             value={prefs.quietVsAccess}
             onChange={(e) =>
-              setPrefs((p) => ({
-                ...p,
-                quietVsAccess: Number(e.target.value),
-              }))
+              setPrefs((p) => ({ ...p, quietVsAccess: Number(e.target.value) }))
             }
             className="mt-1 w-[140px] accent-stone-900 dark:accent-stone-100"
           />
@@ -767,6 +763,7 @@ function RoomCard({
               <div className="text-base sm:text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-50">
                 {room.number}
               </div>
+              {/* Wing label removed */}
               {!expanded && previewTags.length > 0 && (
                 <span className="text-[9px] text-stone-400 dark:text-stone-500">
                   • {previewTags.join(" • ")}
@@ -891,6 +888,10 @@ function LandmarkChip({
 // Wing grid (abstract plan)
 // -----------------------------
 
+// Mobile intent: allow a compact tri-pane experience without forcing a single-wing-only flow.
+// On very small screens we switch the 3-column plan into a horizontal, scrollable tri-view
+// so left wing • hallway • right wing can be viewed together.
+
 function WingGrid({
   rooms,
   landmarks,
@@ -915,12 +916,8 @@ function WingGrid({
   const editable = mode === "staff";
   const left = rooms.filter((r) => r.wing === "left");
   const right = rooms.filter((r) => r.wing === "right");
-  const leftOrdered = [...left].sort(
-    (a, b) => Number(a.number) - Number(b.number)
-  );
-  const rightOrdered = [...right].sort(
-    (a, b) => Number(a.number) - Number(b.number)
-  );
+  const leftOrdered = [...left].sort((a, b) => Number(a.number) - Number(b.number));
+  const rightOrdered = [...right].sort((a, b) => Number(a.number) - Number(b.number));
   const slotCount = Math.max(leftOrdered.length, rightOrdered.length, 8);
   const dragRef = useRef<Landmark | null>(null);
 
@@ -958,6 +955,7 @@ function WingGrid({
     return map;
   }, [landmarks]);
 
+  // Responsive three columns: left, hallway, right
   const leftWingColumn = (
     <div className="space-y-2">
       <div className="text-[10px] text-stone-400 dark:text-stone-500">
@@ -996,6 +994,7 @@ function WingGrid({
         )}
       </div>
 
+      {/* Subtle "spine" hint for better map feel */}
       <div className="relative mt-3">
         <span className="pointer-events-none absolute left-5 top-0 bottom-0 w-px bg-stone-200 dark:bg-stone-800" />
 
@@ -1149,9 +1148,7 @@ function LandmarkPalette({
       <SectionTitle
         kicker="AUTHORING TOOLS"
         title="Add landmarks"
-        right={
-          <span className="text-[10px] text-stone-400">light edit layer</span>
-        }
+        right={<span className="text-[10px] text-stone-400">light edit layer</span>}
       />
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -1248,8 +1245,7 @@ function Recommendations({
                   </span>
                   {m.suggestedDelta ? (
                     <span className="text-[10px] text-stone-500 dark:text-stone-400">
-                      {m.suggestedDelta > 0 ? "+" : ""}
-                      {m.suggestedDelta}
+                      {m.suggestedDelta > 0 ? "+" : ""}{m.suggestedDelta}
                     </span>
                   ) : null}
                 </div>
@@ -1304,10 +1300,7 @@ function GuestSignalModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/20 dark:bg-black/50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/20 dark:bg-black/50" onClick={onClose} />
       <div className="relative w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl bg-white border border-stone-200 shadow-xl p-5 sm:p-6 m-0 sm:m-6 dark:bg-stone-950 dark:border-stone-800">
         <div className="flex items-start justify-between">
           <div>
@@ -1331,37 +1324,35 @@ function GuestSignalModal({
         </div>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            { key: "quiet", label: "Quiet" },
-            { key: "love", label: "Love" },
-            { key: "convenience", label: "Convenience" },
-          ].map((item) => (
-            <div
-              key={item.key}
-              className="rounded-2xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/40"
-            >
-              <div className="text-[10px] text-stone-400 dark:text-stone-500">
-                {item.label}
+          {[{ key: "quiet", label: "Quiet" }, { key: "love", label: "Love" }, { key: "convenience", label: "Convenience" }].map(
+            (item) => (
+              <div
+                key={item.key}
+                className="rounded-2xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/40"
+              >
+                <div className="text-[10px] text-stone-400 dark:text-stone-500">
+                  {item.label}
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={5}
+                  step={1}
+                  value={draft[item.key as keyof SignalDraft] as number}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      [item.key]: Number(e.target.value),
+                    }))
+                  }
+                  className="mt-1 w-full accent-stone-900 dark:accent-stone-100"
+                />
+                <div className="text-xs font-medium text-stone-900 dark:text-stone-50">
+                  {(draft[item.key as keyof SignalDraft] as number)}/5
+                </div>
               </div>
-              <input
-                type="range"
-                min={1}
-                max={5}
-                step={1}
-                value={draft[item.key as keyof SignalDraft] as number}
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    [item.key]: Number(e.target.value),
-                  }))
-                }
-                className="mt-1 w-full accent-stone-900 dark:accent-stone-100"
-              />
-              <div className="text-xs font-medium text-stone-900 dark:text-stone-50">
-                {(draft[item.key as keyof SignalDraft] as number)}/5
-              </div>
-            </div>
-          ))}
+            )
+          )}
         </div>
 
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1459,14 +1450,8 @@ function SelectedRoomPanel({
             </span>
           </div>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            <Badge
-              label={`Quiet ${room.quiet}`}
-              tone={room.quiet >= 7 ? "good" : room.quiet <= 4 ? "warn" : "neutral"}
-            />
-            <Badge
-              label={`Love ${room.love}`}
-              tone={room.love >= 4 ? "good" : "neutral"}
-            />
+            <Badge label={`Quiet ${room.quiet}`} tone={room.quiet >= 7 ? "good" : room.quiet <= 4 ? "warn" : "neutral"} />
+            <Badge label={`Love ${room.love}`} tone={room.love >= 4 ? "good" : "neutral"} />
             <Badge label={`Access ${room.access}`} />
             <Badge label={`View ${room.view}`} />
           </div>
@@ -1482,44 +1467,30 @@ function SelectedRoomPanel({
 
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/40">
-          <div className="text-[10px] text-stone-400 dark:text-stone-500">
-            Match score
-          </div>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Match score</div>
           <div className="text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
             {match.score}
           </div>
-          <div className="text-[10px] text-stone-400 dark:text-stone-500">
-            Confidence: {match.confidence}
-          </div>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Confidence: {match.confidence}</div>
         </div>
         <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/40">
-          <div className="text-[10px] text-stone-400 dark:text-stone-500">
-            Suggested delta
-          </div>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Suggested delta</div>
           <div className="text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
             {delta > 0 ? `+${delta}` : `${delta}`}
           </div>
-          <div className="text-[10px] text-stone-400 dark:text-stone-500">
-            Relative to base
-          </div>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Relative to base</div>
         </div>
         <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/40">
-          <div className="text-[10px] text-stone-400 dark:text-stone-500">
-            Est. rate
-          </div>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Est. rate</div>
           <div className="text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">
             ${finalRate}
           </div>
-          <div className="text-[10px] text-stone-400 dark:text-stone-500">
-            Per night (mock)
-          </div>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">Per night (mock)</div>
         </div>
       </div>
 
       <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-800 dark:bg-stone-900/40">
-        <div className="text-[10px] text-stone-400 dark:text-stone-500">
-          Signal summary
-        </div>
+        <div className="text-[10px] text-stone-400 dark:text-stone-500">Signal summary</div>
         <div className="mt-1 text-xs text-stone-700 dark:text-stone-200">
           {room.notes && room.notes.trim().length > 0
             ? room.notes
@@ -1619,10 +1590,10 @@ export default function LayoutIntelligenceCopilotMVP() {
   };
 
   return (
-    <div className={"min-h-screen font-sans " + (theme === "dark" ? "dark" : "")}>
+    <div className={"min-h-screen font-sans " + (theme === "dark" ? "dark" : "")}> 
       <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <HotelHero
+        <HotelHero
             hotel={hotel}
             mode={mode}
             onMode={setMode}
@@ -1631,10 +1602,9 @@ export default function LayoutIntelligenceCopilotMVP() {
             activeFloor={activeFloor}
             onJump={handleJump}
           />
-
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left rail */}
-            <aside className="lg:col-span-4 space-y-4">
+            <aside className="lg:col-span-3 space-y-4">
               <PreferencePanel prefs={prefs} setPrefs={setPrefs} />
               <Recommendations
                 rooms={floor.rooms}
@@ -1645,10 +1615,10 @@ export default function LayoutIntelligenceCopilotMVP() {
             </aside>
 
             {/* Main canvas */}
-            <section className="lg:col-span-8 space-y-4">
+            <section className="lg:col-span-9 space-y-4">
               <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-950 dark:border-stone-800">
                 <SectionTitle
-                  kicker={`FLOOR ${floor.number}`}
+                  kicker={`FLOOR`}
                   title={floor.name}
                   right={
                     <div className="flex items-center gap-2">
@@ -1663,6 +1633,7 @@ export default function LayoutIntelligenceCopilotMVP() {
                     </div>
                   }
                 />
+                {/* Floor description removed */}
               </div>
 
               {mode === "staff" && (
