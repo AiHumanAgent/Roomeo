@@ -357,7 +357,76 @@ function SectionTitle({
     </div>
   );
 }
+// -----------------------------
+// Compact map room cell (for aligned floor plan rows)
+// -----------------------------
 
+function RoomMapCell({
+  room,
+  prefs,
+  baseRate,
+  selected,
+  onSelect,
+}: {
+  room: Room;
+  prefs: Prefs;
+  baseRate: number;
+  selected: boolean;
+  onSelect: (r: Room) => void;
+}) {
+  const match = computeMatch(room, prefs);
+  const delta = match.suggestedDelta;
+  const finalRate = baseRate + delta;
+
+  const quietBar =
+    room.quiet >= 7
+      ? "border-l-2 border-stone-900 dark:border-stone-100"
+      : room.quiet <= 4
+      ? "border-l-2 border-stone-300 dark:border-stone-700"
+      : "border-l border-stone-200 dark:border-stone-800";
+
+  return (
+    <button
+      onClick={() => onSelect(room)}
+      className={
+        "w-full text-left h-[56px] rounded-xl border px-3 py-2 flex items-center justify-between gap-2 transition " +
+        quietBar +
+        " " +
+        (selected
+          ? "border-stone-900 bg-white shadow-sm dark:border-stone-50 dark:bg-stone-950"
+          : "border-stone-200 bg-stone-50 hover:bg-white hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900/40 dark:hover:bg-stone-900")
+      }
+      title={`Select room ${room.number}`}
+      aria-pressed={selected}
+    >
+      <div className="min-w-0">
+        <div className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+          {room.number}
+        </div>
+        <div className="mt-0.5 flex items-center gap-3 text-[10px] text-stone-500 dark:text-stone-400">
+          <span className="whitespace-nowrap">
+            <span className="inline-block mr-1 text-[9px] font-semibold tracking-wide text-stone-600 dark:text-stone-300">
+              Q
+            </span>
+            {room.quiet}
+          </span>
+          <span className="whitespace-nowrap">
+            <span className="inline-block mr-1 text-[9px] font-semibold tracking-wide text-stone-600 dark:text-stone-300">
+              L
+            </span>
+            {room.love}
+          </span>
+        </div>
+      </div>
+      <div className="text-right shrink-0">
+        <div className="text-[9px] text-stone-400 dark:text-stone-500">est.</div>
+        <div className="text-xs font-semibold text-stone-900 dark:text-stone-50">
+          ${finalRate}<span className="text-[9px] font-medium text-stone-400 dark:text-stone-500">/n</span>
+        </div>
+      </div>
+    </button>
+  );
+}
 // -----------------------------
 // Mode toggle
 // -----------------------------
@@ -422,6 +491,7 @@ function ThemeToggle({
     </div>
   );
 }
+
 function HotelHero({
   hotel,
   mode,
@@ -496,7 +566,7 @@ function HotelHero({
           </div>
 
           {/* Compact floor navigator */}
-          <div className="flex items-center gap-2 rounded-2xl bg-white/70 border border-stone-200 px-2 py-1 backdrop-blur-sm dark:bg-stone-900/60 dark:border-stone-800">
+          <div className="flex items-center justify-center gap-2 rounded-2xl bg-white/70 border border-stone-200 px-2 py-1 backdrop-blur-sm dark:bg-stone-900/60 dark:border-stone-800">
             <button
               onClick={jumpDown}
               disabled={!canDown}
@@ -512,7 +582,7 @@ function HotelHero({
               ▼
             </button>
 
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center justify-center gap-2 min-w-0">
               <div className="h-9 w-9 rounded-full bg-white border border-stone-200 flex items-center justify-center text-sm font-semibold text-stone-900 dark:bg-stone-100 dark:border-stone-200 dark:text-stone-900">
                 {current.number}
               </div>
@@ -544,7 +614,7 @@ function HotelHero({
           </div>
 
           {/* Toggles */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-center gap-1">
             <ThemeToggle theme={theme} onChange={onTheme} />
             <ModeToggle mode={mode} onChange={onMode} />
           </div>
@@ -709,148 +779,6 @@ function PreferencePanel({
   );
 }
 
-// -----------------------------
-// Room card
-// -----------------------------
-
-function RoomCard({
-  room,
-  prefs,
-  baseRate,
-  selected,
-  onSelect,
-  mode,
-  onAddSignal,
-}: {
-  room: Room;
-  prefs: Prefs;
-  baseRate: number;
-  selected: boolean;
-  onSelect: (r: Room) => void;
-  mode: Mode;
-  onAddSignal: (r: Room) => void;
-}) {
-  const match = computeMatch(room, prefs);
-  const delta = match.suggestedDelta;
-  const finalRate = baseRate + delta;
-
-  const quietTone =
-    room.quiet >= 7 ? "good" : room.quiet <= 4 ? "warn" : "neutral";
-
-  const expanded = selected;
-  const previewTags = (room.tags || []).filter(Boolean).slice(0, 2);
-  const fullTags = (room.tags || []).filter(Boolean).slice(0, 4);
-
-  return (
-    <div
-      className={
-        "rounded-2xl border bg-white transition-all dark:bg-stone-950 " +
-        (expanded
-          ? "border-stone-900 shadow-sm dark:border-stone-50"
-          : "border-stone-200 hover:border-stone-300 dark:border-stone-800 dark:hover:border-stone-700")
-      }
-    >
-      <button
-        onClick={() => onSelect(room)}
-        className="w-full text-left p-3 sm:p-4"
-        aria-expanded={expanded}
-        title={expanded ? "Collapse room" : "Expand room"}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="text-base sm:text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-50">
-                {room.number}
-              </div>
-              {!expanded && previewTags.length > 0 && (
-                <span className="text-[9px] text-stone-400 dark:text-stone-500">
-                  • {previewTags.join(" • ")}
-                </span>
-              )}
-            </div>
-
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              <Badge label={`Quiet ${room.quiet}`} tone={quietTone} />
-              <Badge
-                label={`Love ${room.love}`}
-                tone={room.love >= 4 ? "good" : "neutral"}
-              />
-              {expanded &&
-                fullTags.map((t) => (
-                  <Badge key={t} label={t} />
-                ))}
-            </div>
-
-            {expanded && (
-              <div className="mt-2 text-[10px] text-stone-400 dark:text-stone-500">
-                Match {match.score} • Confidence {match.confidence}
-              </div>
-            )}
-          </div>
-
-          <div className="text-right shrink-0">
-            <div className="text-[9px] sm:text-[10px] text-stone-400 dark:text-stone-500">
-              est. rate
-            </div>
-            <div className="text-sm sm:text-base font-semibold tracking-tight text-stone-900 dark:text-stone-50">
-              ${finalRate}
-              <span className="text-[9px] sm:text-[10px] font-medium text-stone-400 dark:text-stone-500">
-                /n
-              </span>
-            </div>
-            {delta !== 0 && (
-              <div className="text-[9px] sm:text-[10px] text-stone-500 dark:text-stone-400">
-                {delta > 0 ? `+${delta}` : `${delta}`} vs base
-              </div>
-            )}
-          </div>
-        </div>
-
-        {expanded && (
-          <>
-            <div className="mt-3 rounded-xl bg-stone-50 border border-stone-200 px-3 py-2 dark:bg-stone-900/40 dark:border-stone-800">
-              <div className="text-[10px] text-stone-400 dark:text-stone-500">
-                signal
-              </div>
-              <div className="text-xs text-stone-700 dark:text-stone-200">
-                {room.notes && room.notes.trim().length > 0
-                  ? room.notes
-                  : "Balanced corridor tradeoff"}
-              </div>
-            </div>
-
-            <div className="mt-3 flex items-center justify-between">
-              <div className="text-[10px] text-stone-400 dark:text-stone-500">
-                {room.reports} community pings
-              </div>
-              <div className="text-[10px] text-stone-400 dark:text-stone-500">
-                Confidence: {match.confidence}
-              </div>
-            </div>
-          </>
-        )}
-      </button>
-
-      {/* Guest CTA only when expanded */}
-      {mode === "guest" && expanded && (
-        <div className="px-3 sm:px-4 pb-3">
-          <div className="flex justify-end">
-            <button
-              onClick={() => onAddSignal(room)}
-              className="px-2.5 py-1 rounded-lg text-[10px] font-medium border border-stone-200 bg-stone-50 hover:bg-white hover:border-stone-300 transition dark:border-stone-800 dark:bg-stone-900/40 dark:text-stone-200 dark:hover:bg-stone-900"
-            >
-              Add signal
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// -----------------------------
-// Landmarks chips
-// -----------------------------
 
 function LandmarkChip({
   landmark,
@@ -895,7 +823,6 @@ function WingGrid({
   onSelectRoom,
   mode,
   onUpdateLandmarks,
-  onAddSignal,
 }: {
   rooms: Room[];
   landmarks: Landmark[];
@@ -905,7 +832,6 @@ function WingGrid({
   onSelectRoom: (r: Room) => void;
   mode: Mode;
   onUpdateLandmarks: (lms: Landmark[]) => void;
-  onAddSignal: (r: Room) => void;
 }) {
   const editable = mode === "staff";
   const left = rooms.filter((r) => r.wing === "left");
@@ -953,36 +879,36 @@ function WingGrid({
     return map;
   }, [landmarks]);
 
-  const leftWingColumn = (
-    <div className="space-y-2">
-      <div className="text-[10px] text-stone-400 dark:text-stone-500">
-        Left wing
-      </div>
-      {leftOrdered.length === 0 && (
-        <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-[11px] text-stone-400 dark:border-stone-800 dark:bg-stone-900/40">
-          No rooms on this level.
-        </div>
-      )}
-      {leftOrdered.map((r) => (
-        <RoomCard
+const leftWingColumn = (
+  <div className="space-y-2">
+    <div className="text-[10px] text-stone-400 dark:text-stone-500">Left wing</div>
+    {Array.from({ length: slotCount }).map((_, idx) => {
+      const r = leftOrdered[idx];
+      return r ? (
+        <RoomMapCell
           key={r.id}
           room={r}
           prefs={prefs}
           baseRate={baseRate}
-          selected={selectedRoom?.number === r.number}
+          selected={selectedRoom?.id === r.id}
           onSelect={onSelectRoom}
-          mode={mode}
-          onAddSignal={onAddSignal}
         />
-      ))}
-    </div>
-  );
+      ) : (
+        <div
+          key={`left-empty-${idx}`}
+          className="h-[56px] rounded-xl border border-dashed border-stone-200 bg-white/40 dark:border-stone-800 dark:bg-stone-950/20"
+        />
+      );
+    })}
+  </div>
+);
 
   const hallwayColumn = (
-    <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3 dark:border-stone-800 dark:bg-stone-900/40">
+    <div className="rounded-xl sm:rounded-2xl border border-stone-200 bg-stone-50 p-2 sm:p-3 dark:border-stone-800 dark:bg-stone-900/40">
       <div className="flex items-center justify-between">
         <div className="text-[10px] text-stone-400 uppercase tracking-widest dark:text-stone-500">
-          Hallway cues
+          <span className="hidden sm:inline">Hallway cues</span>
+          <span className="sm:hidden inline">Hall</span>
         </div>
         {editable && (
           <div className="text-[10px] text-stone-400 dark:text-stone-500">
@@ -992,7 +918,7 @@ function WingGrid({
       </div>
 
       <div className="relative mt-3">
-        <span className="pointer-events-none absolute left-5 top-0 bottom-0 w-px bg-stone-200 dark:bg-stone-800" />
+        <span className="pointer-events-none absolute left-4 sm:left-5 top-0 bottom-0 w-px bg-stone-200 dark:bg-stone-800" />
 
         <div className="space-y-2">
           {Array.from({ length: slotCount }).map((_, idx) => {
@@ -1003,7 +929,7 @@ function WingGrid({
                 onDragOver={allowDrop}
                 onDrop={(e) => dropOnSlot(e, idx)}
                 className={
-                  "min-h-[38px] rounded-xl border px-2 py-2 flex flex-wrap gap-1.5 items-center " +
+                  "h-[56px] rounded-xl border px-1.5 py-1.5 sm:px-2 sm:py-2 flex flex-wrap gap-1.5 items-center " +
                   (editable
                     ? "bg-white border-stone-200 dark:bg-stone-950 dark:border-stone-800"
                     : "bg-stone-100/70 border-stone-200 dark:bg-stone-900/50 dark:border-stone-800")
@@ -1054,34 +980,33 @@ function WingGrid({
 
   const rightWingColumn = (
     <div className="space-y-2">
-      <div className="text-[10px] text-stone-400 dark:text-stone-500">
-        Right wing
-      </div>
-      {rightOrdered.length === 0 && (
-        <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-[11px] text-stone-400 dark:border-stone-800 dark:bg-stone-900/40">
-          No rooms on this level.
-        </div>
-      )}
-      {rightOrdered.map((r) => (
-        <RoomCard
-          key={r.id}
-          room={r}
-          prefs={prefs}
-          baseRate={baseRate}
-          selected={selectedRoom?.number === r.number}
-          onSelect={onSelectRoom}
-          mode={mode}
-          onAddSignal={onAddSignal}
-        />
-      ))}
+      <div className="text-[10px] text-stone-400 dark:text-stone-500">Right wing</div>
+      {Array.from({ length: slotCount }).map((_, idx) => {
+        const r = rightOrdered[idx];
+        return r ? (
+          <RoomMapCell
+            key={r.id}
+            room={r}
+            prefs={prefs}
+            baseRate={baseRate}
+            selected={selectedRoom?.id === r.id}
+            onSelect={onSelectRoom}
+          />
+        ) : (
+          <div
+            key={`right-empty-${idx}`}
+            className="h-[56px] rounded-xl border border-dashed border-stone-200 bg-white/40 dark:border-stone-800 dark:bg-stone-950/20"
+          />
+        );
+      })}
     </div>
   );
 
   return (
     <div className="relative rounded-2xl border border-stone-200 bg-white p-4 dark:bg-stone-950 dark:border-stone-800">
       <SectionTitle
-        kicker="FLOOR PLAN (ABSTRACT)"
-        title="Left wing • Hallway • Right wing"
+        kicker="FLOOR PLAN"
+        title="Floor Plan"
         right={
           <span className="text-[10px] text-stone-400 dark:text-stone-500">
             {editable ? "drag landmarks" : "view room signals"}
@@ -1089,23 +1014,17 @@ function WingGrid({
         }
       />
 
-      {/* Mobile / small-screen: horizontal three-lane scroll to preserve the 3-grid essence */}
-      <div className="mt-4 md:hidden">
-        <div className="flex gap-4 overflow-x-auto pb-3 snap-x snap-mandatory">
-          <div className="snap-start shrink-0 w-[88vw] max-w-[420px]">
-            {leftWingColumn}
-          </div>
-          <div className="snap-start shrink-0 w-[88vw] max-w-[420px]">
-            {hallwayColumn}
-          </div>
-          <div className="snap-start shrink-0 w-[88vw] max-w-[420px]">
-            {rightWingColumn}
-          </div>
+      {/* Mobile / small-screen: show all three lanes at once (slim hallway) */}
+      <div className="mt-4 sm:hidden">
+        <div className="grid grid-cols-[1fr_0.45fr_1fr] gap-2">
+          <div>{leftWingColumn}</div>
+          <div>{hallwayColumn}</div>
+          <div>{rightWingColumn}</div>
         </div>
       </div>
 
       {/* Desktop / tablet: true 3-column grid */}
-      <div className="mt-4 hidden md:grid md:grid-cols-3 gap-4">
+      <div className="mt-4 hidden sm:grid sm:grid-cols-3 gap-4">
         {leftWingColumn}
         {hallwayColumn}
         {rightWingColumn}
@@ -1177,11 +1096,13 @@ function Recommendations({
   prefs,
   baseRate,
   onSelectRoom,
+  variant = "card",
 }: {
   rooms: Room[];
   prefs: Prefs;
   baseRate: number;
   onSelectRoom?: (r: Room) => void;
+  variant?: "card" | "inline";
 }) {
   const ranked = useMemo(() => {
     return [...rooms]
@@ -1191,6 +1112,7 @@ function Recommendations({
   }, [rooms, prefs]);
 
   if (rooms.length === 0) {
+    if (variant === "inline") return null;
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-950 dark:border-stone-800">
         <SectionTitle kicker="RECOMMENDATIONS" title="No rooms on this level" />
@@ -1200,58 +1122,63 @@ function Recommendations({
       </div>
     );
   }
+  const grid = (
+    <div className="grid grid-cols-3 gap-2">
+      {ranked.map(({ r, m }, idx) => {
+        const rate = baseRate + m.suggestedDelta;
+        return (
+          <button
+            key={r.id}
+            onClick={() => onSelectRoom?.(r)}
+            className="text-left rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 transition hover:bg-white hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900/40 dark:hover:bg-stone-900"
+            title={`Select room ${r.number}`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-stone-400">#{idx + 1}</span>
+                <span className="text-xs font-semibold tracking-tight text-stone-900 dark:text-stone-50">
+                  {r.number}
+                </span>
+              </div>
+              <div className="text-[10px] text-stone-400">{m.score}</div>
+            </div>
+            <div className="mt-1 flex items-center gap-3 text-[10px] text-stone-500 dark:text-stone-400">
+              <span className="whitespace-nowrap">
+                <span className="inline-block mr-1 text-[9px] font-semibold tracking-wide text-stone-600 dark:text-stone-300">
+                  Q
+                </span>
+                {r.quiet}
+              </span>
+              <span className="whitespace-nowrap">
+                <span className="inline-block mr-1 text-[9px] font-semibold tracking-wide text-stone-600 dark:text-stone-300">
+                  L
+                </span>
+                {r.love}
+              </span>
+            </div>
+            <div className="mt-1 flex items-center justify-between">
+              <span className="text-[10px] text-stone-500 dark:text-stone-400">
+                est. ${rate}/n
+              </span>
+              {m.suggestedDelta ? (
+                <span className="text-[10px] text-stone-500 dark:text-stone-400">
+                  {m.suggestedDelta > 0 ? "+" : ""}{m.suggestedDelta}
+                </span>
+              ) : null}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
 
+  if (variant === "inline") return grid;
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-950 dark:border-stone-800">
       <SectionTitle kicker="RECOMMENDATIONS" title="Top matches" />
 
       <div className="mt-3">
-        <div className="grid grid-cols-3 gap-2">
-          {ranked.map(({ r, m }, idx) => {
-            const rate = baseRate + m.suggestedDelta;
-            return (
-              <button
-                key={r.id}
-                onClick={() => onSelectRoom?.(r)}
-                className="text-left rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 transition hover:bg-white hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900/40 dark:hover:bg-stone-900"
-                title={`Select room ${r.number}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-stone-400">#{idx + 1}</span>
-                    <span className="text-xs font-semibold tracking-tight text-stone-900 dark:text-stone-50">
-                      {r.number}
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-stone-400">{m.score}</div>
-                </div>
-
-                <div className="mt-1 flex flex-wrap gap-1">
-                  <Badge
-                    label={`Quiet ${r.quiet}`}
-                    tone={r.quiet >= 7 ? "good" : r.quiet <= 4 ? "warn" : "neutral"}
-                  />
-                  <Badge
-                    label={`Love ${r.love}`}
-                    tone={r.love >= 4 ? "good" : "neutral"}
-                  />
-                </div>
-
-                <div className="mt-1 flex items-center justify-between">
-                  <span className="text-[10px] text-stone-500 dark:text-stone-400">
-                    est. ${rate}/n
-                  </span>
-                  {m.suggestedDelta ? (
-                    <span className="text-[10px] text-stone-500 dark:text-stone-400">
-                      {m.suggestedDelta > 0 ? "+" : ""}
-                      {m.suggestedDelta}
-                    </span>
-                  ) : null}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+      {grid}
       </div>
     </div>
   );
@@ -1430,11 +1357,15 @@ function SelectedRoomPanel({
   prefs,
   baseRate,
   onClear,
+  mode,
+  onAddSignal,
 }: {
   room: Room;
   prefs: Prefs;
   baseRate: number;
   onClear: () => void;
+  mode: Mode;
+  onAddSignal: (r: Room) => void;
 }) {
   const match = computeMatch(room, prefs);
   const delta = match.suggestedDelta;
@@ -1450,7 +1381,7 @@ function SelectedRoomPanel({
           <div className="text-lg font-semibold tracking-tight text-stone-900 dark:text-stone-50">
             Room {room.number}
             <span className="ml-2 text-[10px] text-stone-400 uppercase tracking-widest">
-              {room.wing} wing
+              {room.wing}
             </span>
           </div>
           <div className="mt-1 flex flex-wrap gap-1.5">
@@ -1467,12 +1398,23 @@ function SelectedRoomPanel({
           </div>
         </div>
 
-        <button
-          onClick={onClear}
-          className="px-2.5 py-1.5 rounded-lg text-[10px] font-medium border border-stone-200 bg-stone-50 hover:bg-white dark:border-stone-800 dark:bg-stone-900/40 dark:hover:bg-stone-900"
-        >
-          Clear
-        </button>
+        <div className="flex items-center gap-1.5">
+          {mode === "guest" && (
+            <button
+              onClick={() => onAddSignal(room)}
+              className="px-2.5 py-1.5 rounded-lg text-[10px] font-medium border border-stone-200 bg-white hover:bg-stone-50 hover:border-stone-300 transition dark:border-stone-800 dark:bg-stone-950 dark:hover:bg-stone-900"
+              title="Add a quick guest signal"
+            >
+              Add signal
+            </button>
+          )}
+          <button
+            onClick={onClear}
+            className="px-2.5 py-1.5 rounded-lg text-[10px] font-medium border border-stone-200 bg-stone-50 hover:bg-white dark:border-stone-800 dark:bg-stone-900/40 dark:hover:bg-stone-900"
+          >
+            Clear
+          </button>
+        </div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1545,14 +1487,18 @@ export default function LayoutIntelligenceCopilotMVP() {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [signalTarget, setSignalTarget] = useState<Room | null>(null);
 
-  const handleSelectRoom = (r: Room) => {
-    setSelectedRoom((prev) => (prev?.id === r.id ? null : r));
-  };
-
   const floor = useMemo(
     () => hotel.floors.find((f) => f.number === activeFloor) ?? hotel.floors[0],
     [hotel, activeFloor]
   );
+
+  const floorSubtitle =
+    floor.feature ?? (floor.rooms.length ? "Guest rooms & signals" : "Amenity level");
+
+  const handleSelectRoom = (r: Room) => {
+    setSelectedRoom((prev) => (prev?.id === r.id ? null : r));
+  };
+
 
   const handleJump = (n: number) => {
     setActiveFloor(n);
@@ -1631,12 +1577,7 @@ export default function LayoutIntelligenceCopilotMVP() {
             {/* Left rail */}
             <aside className="lg:col-span-4 space-y-4">
               <PreferencePanel prefs={prefs} setPrefs={setPrefs} />
-              <Recommendations
-                rooms={floor.rooms}
-                prefs={prefs}
-                baseRate={hotel.baseRate}
-                onSelectRoom={handleSelectRoom}
-              />
+
             </aside>
 
             {/* Main canvas */}
@@ -1644,7 +1585,7 @@ export default function LayoutIntelligenceCopilotMVP() {
               <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 dark:bg-stone-950 dark:border-stone-800">
                 <SectionTitle
                   kicker={`FLOOR ${floor.number}`}
-                  title={floor.name}
+                  title={floorSubtitle}
                   right={
                     <div className="flex items-center gap-2">
                       {floor.feature && <Badge label={floor.feature} />}
@@ -1658,6 +1599,21 @@ export default function LayoutIntelligenceCopilotMVP() {
                     </div>
                   }
                 />
+                                  {/* Inline Top Matches (uses the otherwise redundant floor header space) */}
+                {floor.rooms.length > 0 && (
+                  <div className="mt-3">
+                    <div className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-2">
+                      Top matches
+                    </div>
+                    <Recommendations
+                      rooms={floor.rooms}
+                      prefs={prefs}
+                      baseRate={hotel.baseRate}
+                      onSelectRoom={handleSelectRoom}
+                      variant="inline"
+                    />
+                  </div>
+                )}
               </div>
 
               {mode === "staff" && (
@@ -1678,7 +1634,6 @@ export default function LayoutIntelligenceCopilotMVP() {
                 onUpdateLandmarks={(lms) =>
                   updateLandmarksForFloor(floor.number, lms)
                 }
-                onAddSignal={(r) => setSignalTarget(r)}
               />
 
               {selectedRoom && (
@@ -1686,6 +1641,8 @@ export default function LayoutIntelligenceCopilotMVP() {
                   room={selectedRoom}
                   prefs={prefs}
                   baseRate={hotel.baseRate}
+                  mode={mode}
+                  onAddSignal={(r) => setSignalTarget(r)}
                   onClear={() => setSelectedRoom(null)}
                 />
               )}
