@@ -30,6 +30,7 @@ import React, { useMemo, useRef, useState } from "react";
 type Mode = "guest" | "staff";
 
 type Theme = "light" | "dark";
+type ScanMode = "calm" | "detail";
 
 type AmenityType =
   | "elevator"
@@ -367,12 +368,14 @@ function RoomMapCell({
   baseRate,
   selected,
   onSelect,
+  scanMode,
 }: {
   room: Room;
   prefs: Prefs;
   baseRate: number;
   selected: boolean;
   onSelect: (r: Room) => void;
+  scanMode: ScanMode;
 }) {
   const match = computeMatch(room, prefs);
   const delta = match.suggestedDelta;
@@ -385,43 +388,93 @@ function RoomMapCell({
       ? "border-l-2 border-stone-300 dark:border-stone-700"
       : "border-l border-stone-200 dark:border-stone-800";
 
+  const quietTone =
+    room.quiet >= 8
+      ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+      : room.quiet <= 4
+      ? "bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-200"
+      : "bg-stone-100 text-stone-600 dark:bg-stone-900 dark:text-stone-300";
+
+  const loveTone =
+    room.love >= 4
+      ? "bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
+      : room.love <= 2
+      ? "bg-stone-200 text-stone-700 dark:bg-stone-800 dark:text-stone-200"
+      : "bg-stone-100 text-stone-600 dark:bg-stone-900 dark:text-stone-300";
+
+  const priceTone =
+    delta > 0
+      ? "text-emerald-700 dark:text-emerald-300"
+      : delta < 0
+      ? "text-rose-700 dark:text-rose-300"
+      : "text-stone-900 dark:text-stone-50";
+
   return (
     <button
       onClick={() => onSelect(room)}
       className={
-        "w-full text-left h-[56px] rounded-xl border px-3 py-2 flex items-center justify-between gap-2 transition " +
+        "group w-full text-left h-[56px] rounded-xl border px-3 py-2 flex items-center justify-between gap-2 " +
+        "transition-[transform,box-shadow,background-color,border-color,ring,opacity] duration-200 ease-out will-change-transform " +
+        "hover:-translate-y-[1px] active:translate-y-0 " +
+        "hover:shadow-md hover:shadow-stone-200/60 dark:hover:shadow-black/30 " +
+        "hover:ring-1 hover:ring-stone-200/60 dark:hover:ring-stone-700/40 " +
         quietBar +
         " " +
         (selected
-          ? "border-stone-900 bg-white shadow-sm dark:border-stone-50 dark:bg-stone-950"
-          : "border-stone-200 bg-stone-50 hover:bg-white hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900/40 dark:hover:bg-stone-900")
+          ? "border-stone-900 bg-white/90 backdrop-blur-sm shadow-sm ring-1 ring-stone-900/5 dark:border-stone-50 dark:bg-stone-950/90 dark:ring-stone-50/10"
+          : "border-stone-200 bg-white/60 backdrop-blur-sm hover:bg-white/80 hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900/35 dark:hover:bg-stone-900/55")
       }
-      title={`Select room ${room.number}`}
+      title={`Select room ${room.number} (${room.wing} wing)`}
       aria-pressed={selected}
     >
       <div className="min-w-0">
-        <div className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-50">
-          {room.number}
-        </div>
-        <div className="mt-0.5 flex items-center gap-3 text-[10px] text-stone-500 dark:text-stone-400">
-          <span className="whitespace-nowrap">
-            <span className="inline-block mr-1 text-[9px] font-semibold tracking-wide text-stone-600 dark:text-stone-300">
-              Q
-            </span>
-            {room.quiet}
+            <div className="text-sm font-semibold tracking-tight text-stone-900 dark:text-stone-50 flex items-center gap-1.5 min-w-0">
+                <span className="hidden sm:inline">{room.number}</span>
+                <span className="sm:hidden inline">
+                  {scanMode === "detail" || selected ? room.number : room.number.slice(-2)}
+                </span>
+
+                {(scanMode === "detail" || selected) && room.reports >= 8 && (
+                  <span
+                    className="ml-1 inline-flex items-center rounded-full border border-stone-200 bg-white/70 px-1.5 py-0.5 text-[8px] text-stone-500 dark:border-stone-800 dark:bg-stone-950/60 dark:text-stone-400"
+                    title={`${room.reports} community pings`}
+                  >
+                    {room.reports}p
+                  </span>
+                )}
+              </div>
+
+              <div
+                className={
+                  "mt-0.5 flex items-center gap-1.5 text-[9px] transition-opacity " +
+                  (scanMode === "calm" && !selected
+                    ? "opacity-0 group-hover:opacity-100"
+                    : "opacity-90 group-hover:opacity-100")
+                }
+              >
+          <span
+            className={`inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full font-semibold tracking-wide ${quietTone}`}
+            title={`Quiet ${room.quiet}/10`}
+          >
+            Q
           </span>
-          <span className="whitespace-nowrap">
-            <span className="inline-block mr-1 text-[9px] font-semibold tracking-wide text-stone-600 dark:text-stone-300">
-              L
-            </span>
-            {room.love}
+          <span
+            className={`inline-flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full font-semibold tracking-wide ${loveTone}`}
+            title={`Love ${room.love}/5`}
+          >
+            L
           </span>
         </div>
-      </div>
-      <div className="text-right shrink-0">
-        <div className="text-[9px] text-stone-400 dark:text-stone-500">est.</div>
-        <div className="text-xs font-semibold text-stone-900 dark:text-stone-50">
-          ${finalRate}<span className="text-[9px] font-medium text-stone-400 dark:text-stone-500">/n</span>
+        </div>
+      <div className="text-right shrink-0 min-w-[44px]">
+           {(scanMode === "detail" || selected) && (
+          <div className="text-[9px] text-stone-400 dark:text-stone-500">est.</div>
+        )}
+        <div className={`text-xs font-semibold ${priceTone}`}>
+                  ${finalRate}
+          {(scanMode === "detail" || selected) && (
+            <span className="text-[9px] font-medium text-stone-400 dark:text-stone-500">/n</span>
+          )}
         </div>
       </div>
     </button>
@@ -434,30 +487,46 @@ function RoomMapCell({
 function ModeToggle({
   mode,
   onChange,
+  theme,
 }: {
   mode: Mode;
   onChange: (m: Mode) => void;
+  theme: Theme;
 }) {
-  return (
-    <div className="grid grid-cols-2 items-center gap-1 rounded-lg bg-stone-100 p-0.5 border border-stone-200 dark:bg-stone-900 dark:border-stone-800">
-      {(["guest", "staff"] as const).map((m) => (
-        <button
-          key={m}
-          onClick={() => onChange(m)}
-          className={
-            "px-2 py-1 text-[10px] rounded-md transition-all " +
-            (mode === m
-              ? "bg-white shadow-sm text-stone-900 dark:bg-stone-100 dark:text-stone-900"
-              : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100")
-          }
-          title={m === "guest" ? "Guest" : "Staff"}
-        >
-          {m === "guest" ? "Guest" : "Staff"}
-        </button>
-      ))}
-    </div>
-  );
-}
+  const isDark = theme === "dark";
+
+  const containerCls =
+    "grid grid-cols-2 items-center gap-1 rounded-lg p-0.5 border " +
+    (isDark
+      ? "bg-stone-900 border-stone-800"
+      : "bg-stone-100 border-stone-200");
+
+  const activeCls =
+    "bg-white shadow-sm text-stone-900" + (isDark ? " bg-stone-100" : "");
+
+  const inactiveCls = isDark
+    ? "text-stone-300 hover:text-white"
+    : "text-stone-500 hover:text-stone-800";
+
+    return (
+      <div className={containerCls}>
+        {(["guest", "staff"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => onChange(m)}
+            className={
+              "px-2 py-1 text-[10px] rounded-md transition-all min-w-[44px] " +
+              (mode === m ? activeCls : inactiveCls)
+            }
+            title={m === "guest" ? "Guest" : "Staff"}
+            aria-pressed={mode === m}
+          >
+            {m === "guest" ? "Guest" : "Staff"}
+          </button>
+        ))}
+      </div>
+    );
+  }
 
 // -----------------------------
 // Theme toggle
@@ -470,25 +539,23 @@ function ThemeToggle({
   theme: Theme;
   onChange: (t: Theme) => void;
 }) {
+  const isDark = theme === "dark";
+  const toggle = () => onChange(isDark ? "light" : "dark");
+
   return (
-    <div className="grid grid-cols-2 items-center gap-1 rounded-lg bg-stone-100 p-0.5 border border-stone-200 dark:bg-stone-900 dark:border-stone-800">
-      {(["light", "dark"] as const).map((t) => (
-        <button
-          key={t}
-          onClick={() => onChange(t)}
-          className={
-            "px-2 py-1 text-[10px] rounded-md transition-all " +
-            (theme === t
-              ? "bg-white shadow-sm text-stone-900 dark:bg-stone-100 dark:text-stone-900"
-              : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100")
-          }
-          aria-label={t === "light" ? "Light mode" : "Dark mode"}
-          title={t === "light" ? "Light" : "Dark"}
-        >
-          <span className="leading-none">{t === "light" ? "☀︎" : "🌙"}</span>
-        </button>
-      ))}
-    </div>
+    <button
+      onClick={toggle}
+      className={
+        "h-8 w-10 sm:w-auto sm:h-auto rounded-lg border px-0 sm:px-2 sm:py-1 text-[10px] font-medium transition-all flex items-center justify-center " +
+        (isDark
+          ? "bg-stone-900 text-stone-50 border-stone-800 hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:border-stone-200"
+          : "bg-white text-stone-900 border-stone-200 hover:bg-stone-50 dark:bg-stone-950 dark:text-stone-50 dark:border-stone-800")
+      }
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Dark" : "Light"}
+    >
+      <span className="leading-none text-xs">{isDark ? "🌙" : "☀︎"}</span>
+    </button>
   );
 }
 
@@ -510,6 +577,7 @@ function HotelHero({
   onJump: (n: number) => void;
 }) {
   const hasImage = Boolean(hotel.imageUrl);
+  const isDark = theme === "dark";
 
   const floorsSorted = useMemo(
     () => [...hotel.floors].sort((a, b) => a.number - b.number),
@@ -528,12 +596,23 @@ function HotelHero({
   const jumpDown = () => canDown && onJump(floorsSorted[idx - 1].number);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm dark:bg-stone-950 dark:border-stone-800">
+      <div
+  className={
+       "relative overflow-hidden rounded-3xl border shadow-sm " +
+       (theme === "dark"
+         ? "border-stone-800 bg-stone-950"
+         : "border-stone-200 bg-white")
+     }
+   >
       <div
         className="absolute inset-0"
         style={{
           backgroundImage: hasImage
-            ? `linear-gradient(180deg, rgba(250,250,249,0.78), rgba(250,250,249,0.96)), url(${hotel.imageUrl})`
+            ? isDark
+              ? `linear-gradient(180deg, rgba(9,9,11,0.78), rgba(9,9,11,0.96)), url(${hotel.imageUrl})`
+              : `linear-gradient(180deg, rgba(250,250,249,0.78), rgba(250,250,249,0.96)), url(${hotel.imageUrl})`
+            : isDark
+            ? "radial-gradient(circle at 20% 0%, rgba(250,250,249,0.06), transparent 40%), radial-gradient(circle at 80% 30%, rgba(250,250,249,0.05), transparent 45%)"
             : "radial-gradient(circle at 20% 0%, rgba(120,113,108,0.10), transparent 40%), radial-gradient(circle at 80% 30%, rgba(120,113,108,0.08), transparent 45%)",
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -556,7 +635,7 @@ function HotelHero({
               R
             </div>
             <div className="min-w-0">
-              <div className="text-[10px] tracking-widest text-stone-400 dark:text-stone-500">
+              <div className="hidden sm:block text-[10px] tracking-widest text-stone-400 dark:text-stone-500">
                 ROOMSENSE
               </div>
               <div className="text-sm sm:text-base font-semibold text-stone-900 dark:text-stone-50 truncate">
@@ -571,7 +650,7 @@ function HotelHero({
               onClick={jumpDown}
               disabled={!canDown}
               className={
-                "h-7 w-7 rounded-lg border text-[10px] font-medium transition " +
+                "h-7 w-7 rounded-lg border text-[10px] font-medium transition flex items-center justify-center leading-none " +
                 (canDown
                   ? "bg-white border-stone-200 text-stone-700 hover:border-stone-300 hover:bg-stone-50 dark:bg-stone-950 dark:border-stone-800 dark:text-stone-200 dark:hover:border-stone-700"
                   : "bg-stone-100 border-stone-200 text-stone-300 cursor-not-allowed dark:bg-stone-900/40 dark:border-stone-800 dark:text-stone-600")
@@ -601,7 +680,7 @@ function HotelHero({
               onClick={jumpUp}
               disabled={!canUp}
               className={
-                "h-7 w-7 rounded-lg border text-[10px] font-medium transition " +
+                "h-7 w-7 rounded-lg border text-[10px] font-medium transition flex items-center justify-center leading-none " +
                 (canUp
                   ? "bg-white border-stone-200 text-stone-700 hover:border-stone-300 hover:bg-stone-50 dark:bg-stone-950 dark:border-stone-800 dark:text-stone-200 dark:hover:border-stone-700"
                   : "bg-stone-100 border-stone-200 text-stone-300 cursor-not-allowed dark:bg-stone-900/40 dark:border-stone-800 dark:text-stone-600")
@@ -616,7 +695,7 @@ function HotelHero({
           {/* Toggles */}
           <div className="flex items-center justify-center gap-1">
             <ThemeToggle theme={theme} onChange={onTheme} />
-            <ModeToggle mode={mode} onChange={onMode} />
+            <ModeToggle mode={mode} onChange={onMode} theme={theme} />
           </div>
         </div>
       </div>
@@ -631,9 +710,13 @@ function HotelHero({
 function PreferencePanel({
   prefs,
   setPrefs,
+ scanMode,
+setScanMode,
 }: {
   prefs: Prefs;
   setPrefs: React.Dispatch<React.SetStateAction<Prefs>>;
+  scanMode: ScanMode;
+  setScanMode: React.Dispatch<React.SetStateAction<ScanMode>>;
 }) {
   const label =
     prefs.quietVsAccess >= 60
@@ -648,9 +731,29 @@ function PreferencePanel({
         kicker="PREFERENCES"
         title="Quiet vs Convenience"
         right={
-          <span className="text-[11px] text-stone-500 dark:text-stone-400">
-            {label}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-stone-500 dark:text-stone-400">
+              {label}
+            </span>
+            <div className="grid grid-cols-2 items-center gap-0.5 rounded-lg bg-stone-100 p-0.5 border border-stone-200 dark:bg-stone-900 dark:border-stone-800">
+              {(["calm", "detail"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setScanMode(m)}
+                  className={
+                    "px-2 py-1 text-[9px] rounded-md transition-all min-w-[40px] " +
+                    (scanMode === m
+                      ? "bg-white shadow-sm text-stone-900 dark:bg-stone-100 dark:text-stone-900"
+                      : "text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100")
+                  }
+                  title={m === "calm" ? "Calm scan" : "Detail scan"}
+                  aria-pressed={scanMode === m}
+                >
+                  {m === "calm" ? "Calm" : "Detail"}
+                </button>
+              ))}
+            </div>
+          </div>
         }
       />
 
@@ -668,69 +771,71 @@ function PreferencePanel({
         />
       </div>
 
-      {/* Mobile: keep Quiet vs Convenience + Avoid Elevators + Premium tolerance in ONE line */}
-      <div className="mt-3 sm:hidden flex items-center gap-2 overflow-x-auto pb-1">
-        <div className="rounded-xl bg-stone-50 border border-stone-200 px-3 py-2 shrink-0 dark:bg-stone-900/40 dark:border-stone-800">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] text-stone-600 dark:text-stone-300 whitespace-nowrap">
-              Quiet vs Convenience
-            </span>
-            <span className="text-[10px] font-medium text-stone-900 dark:text-stone-50 whitespace-nowrap">
-              {label}
-            </span>
+      {/* Mobile: unified control strip (single visual bar) */}
+      <div className="mt-3 sm:hidden">
+        <div className="grid grid-cols-[1.2fr_0.8fr_1fr] gap-2 rounded-xl border border-stone-200 bg-stone-50 px-2.5 py-2 dark:border-stone-800 dark:bg-stone-900/40">
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[9px] text-stone-600 dark:text-stone-300 whitespace-nowrap">
+                Quiet vs Convenience
+              </span>
+              <span className="text-[9px] font-medium text-stone-900 dark:text-stone-50 whitespace-nowrap">
+                {label}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={prefs.quietVsAccess}
+              onChange={(e) =>
+                setPrefs((p) => ({
+                  ...p,
+                  quietVsAccess: Number(e.target.value),
+                }))
+              }
+              className="mt-1 w-full accent-stone-900 dark:accent-stone-100"
+            />
           </div>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={prefs.quietVsAccess}
-            onChange={(e) =>
-              setPrefs((p) => ({
-                ...p,
-                quietVsAccess: Number(e.target.value),
-              }))
-            }
-            className="mt-1 w-[140px] accent-stone-900 dark:accent-stone-100"
-          />
-        </div>
 
-        <label className="flex items-center gap-2 rounded-xl bg-stone-50 border border-stone-200 px-3 py-2 shrink-0 dark:bg-stone-900/40 dark:border-stone-800">
-          <span className="text-[10px] text-stone-600 dark:text-stone-300 whitespace-nowrap">
-            Avoid Elevators
-          </span>
-          <input
-            type="checkbox"
-            checked={prefs.avoidElevator}
-            onChange={(e) =>
-              setPrefs((p) => ({ ...p, avoidElevator: e.target.checked }))
-            }
-            className="h-3.5 w-3.5 accent-stone-900 dark:accent-stone-100"
-          />
-        </label>
+          <label className="flex items-center justify-center gap-2 rounded-lg border border-stone-200 bg-white px-2 py-1.5 dark:border-stone-800 dark:bg-stone-950">
+            <span className="text-[9px] text-stone-600 dark:text-stone-300 whitespace-nowrap">
+              Avoid elevators
+            </span>
+            <input
+              type="checkbox"
+              checked={prefs.avoidElevator}
+              onChange={(e) =>
+                setPrefs((p) => ({ ...p, avoidElevator: e.target.checked }))
+              }
+              className="h-3.5 w-3.5 accent-stone-900 dark:accent-stone-100"
+            />
+          </label>
 
-        <div className="rounded-xl bg-stone-50 border border-stone-200 px-3 py-2 min-w-[170px] shrink-0 dark:bg-stone-900/40 dark:border-stone-800">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] text-stone-600 dark:text-stone-300 whitespace-nowrap">
-              Premium Tolerance
-            </span>
-            <span className="text-[10px] font-medium text-stone-900 dark:text-stone-50 whitespace-nowrap">
-              +${prefs.premiumTolerance}
-            </span>
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[9px] text-stone-600 dark:text-stone-300 whitespace-nowrap">
+                Premium tolerance
+              </span>
+              <span className="text-[9px] font-medium text-stone-900 dark:text-stone-50 whitespace-nowrap">
+      ${prefs.premiumTolerance}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={10}
+              step={1}
+              value={prefs.premiumTolerance}
+              onChange={(e) =>
+                setPrefs((p) => ({
+                  ...p,
+                  premiumTolerance: Number(e.target.value),
+                }))
+              }
+              className="mt-1 w-full accent-stone-900 dark:accent-stone-100"
+            />
           </div>
-          <input
-            type="range"
-            min={0}
-            max={10}
-            step={1}
-            value={prefs.premiumTolerance}
-            onChange={(e) =>
-              setPrefs((p) => ({
-                ...p,
-                premiumTolerance: Number(e.target.value),
-              }))
-            }
-            className="mt-1 w-full accent-stone-900 dark:accent-stone-100"
-          />
         </div>
       </div>
 
@@ -756,7 +861,7 @@ function PreferencePanel({
               Premium tolerance
             </span>
             <span className="text-xs font-medium text-stone-900 dark:text-stone-50">
-              +${prefs.premiumTolerance}
+    ${prefs.premiumTolerance}
             </span>
           </div>
           <input
@@ -797,8 +902,8 @@ function LandmarkChip({
       className={
         "inline-flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-[10px] " +
         (editable
-          ? "bg-white border-stone-200 cursor-grab active:cursor-grabbing dark:bg-stone-950 dark:border-stone-800"
-          : "bg-stone-50 border-stone-200 dark:bg-stone-900/40 dark:border-stone-800")
+          ? "bg-white/80 backdrop-blur-sm border-stone-200 cursor-grab active:cursor-grabbing hover:-translate-y-[1px] hover:shadow-sm transition-all dark:bg-stone-950/80 dark:border-stone-800"
+          : "bg-stone-50/70 backdrop-blur-sm border-stone-200 transition-all dark:bg-stone-900/30 dark:border-stone-800")
       }
       title={meta.label}
     >
@@ -823,6 +928,7 @@ function WingGrid({
   onSelectRoom,
   mode,
   onUpdateLandmarks,
+  scanMode,
 }: {
   rooms: Room[];
   landmarks: Landmark[];
@@ -832,6 +938,7 @@ function WingGrid({
   onSelectRoom: (r: Room) => void;
   mode: Mode;
   onUpdateLandmarks: (lms: Landmark[]) => void;
+  scanMode: ScanMode; 
 }) {
   const editable = mode === "staff";
   const left = rooms.filter((r) => r.wing === "left");
@@ -880,8 +987,18 @@ function WingGrid({
   }, [landmarks]);
 
 const leftWingColumn = (
-  <div className="space-y-2">
-    <div className="text-[10px] text-stone-400 dark:text-stone-500">Left wing</div>
+  <div className="space-y-2 rounded-xl bg-sky-50/40 p-1.5 border border-sky-100/60 dark:bg-sky-500/5 dark:border-sky-500/10">
+    <div className="flex items-center gap-2">
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-sky-500/50 dark:bg-sky-300/50" />
+      <div className="text-[10px] text-stone-400 dark:text-stone-500 flex items-center gap-1">
+        <span>Left wing</span>
+        {leftOrdered[0]?.number && (
+          <span className="sm:hidden inline-flex items-center rounded-full border border-stone-200 bg-white/70 px-1.5 py-0.5 text-[8px] text-stone-500 dark:border-stone-800 dark:bg-stone-950/60 dark:text-stone-400">
+            {leftOrdered[0].number.slice(0, -2)}xx
+          </span>
+        )}
+      </div>
+    </div>
     {Array.from({ length: slotCount }).map((_, idx) => {
       const r = leftOrdered[idx];
       return r ? (
@@ -892,6 +1009,7 @@ const leftWingColumn = (
           baseRate={baseRate}
           selected={selectedRoom?.id === r.id}
           onSelect={onSelectRoom}
+          scanMode={scanMode}
         />
       ) : (
         <div
@@ -904,7 +1022,7 @@ const leftWingColumn = (
 );
 
   const hallwayColumn = (
-    <div className="rounded-xl sm:rounded-2xl border border-stone-200 bg-stone-50 p-2 sm:p-3 dark:border-stone-800 dark:bg-stone-900/40">
+    <div className="rounded-xl sm:rounded-2xl border border-stone-200/60 bg-stone-50/50 p-2 sm:p-3 dark:border-stone-800/60 dark:bg-stone-900/30">
       <div className="flex items-center justify-between">
         <div className="text-[10px] text-stone-400 uppercase tracking-widest dark:text-stone-500">
           <span className="hidden sm:inline">Hallway cues</span>
@@ -918,8 +1036,7 @@ const leftWingColumn = (
       </div>
 
       <div className="relative mt-3">
-        <span className="pointer-events-none absolute left-4 sm:left-5 top-0 bottom-0 w-px bg-stone-200 dark:bg-stone-800" />
-
+        {/* vertical guide line removed */}
         <div className="space-y-2">
           {Array.from({ length: slotCount }).map((_, idx) => {
             const here = lmByIndex.get(idx) || [];
@@ -935,9 +1052,6 @@ const leftWingColumn = (
                     : "bg-stone-100/70 border-stone-200 dark:bg-stone-900/50 dark:border-stone-800")
                 }
               >
-                <span className="text-[9px] text-stone-400 dark:text-stone-500 ml-2 mr-1">
-                  {idx + 1}
-                </span>
                 {here.length === 0 ? (
                   <span className="text-[10px] text-stone-400 dark:text-stone-500">
                     {editable ? "Drop amenity here" : "—"}
@@ -979,8 +1093,18 @@ const leftWingColumn = (
   );
 
   const rightWingColumn = (
-    <div className="space-y-2">
-      <div className="text-[10px] text-stone-400 dark:text-stone-500">Right wing</div>
+    <div className="space-y-2 rounded-xl bg-amber-50/40 p-1.5 border border-amber-100/60 dark:bg-amber-500/5 dark:border-amber-500/10">
+      <div className="flex items-center gap-2">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500/50 dark:bg-amber-300/50" />
+        <div className="text-[10px] text-stone-400 dark:text-stone-500 flex items-center gap-1">
+          <span>Right wing</span>
+          {rightOrdered[0]?.number && (
+            <span className="sm:hidden inline-flex items-center rounded-full border border-stone-200 bg-white/70 px-1.5 py-0.5 text-[8px] text-stone-500 dark:border-stone-800 dark:bg-stone-950/60 dark:text-stone-400">
+              {rightOrdered[0].number.slice(0, -2)}xx
+            </span>
+          )}
+        </div>
+      </div>
       {Array.from({ length: slotCount }).map((_, idx) => {
         const r = rightOrdered[idx];
         return r ? (
@@ -991,6 +1115,7 @@ const leftWingColumn = (
             baseRate={baseRate}
             selected={selectedRoom?.id === r.id}
             onSelect={onSelectRoom}
+            scanMode={scanMode}
           />
         ) : (
           <div
@@ -1003,7 +1128,7 @@ const leftWingColumn = (
   );
 
   return (
-    <div className="relative rounded-2xl border border-stone-200 bg-white p-4 dark:bg-stone-950 dark:border-stone-800">
+    <div className="relative rounded-2xl border border-stone-200 bg-white/85 backdrop-blur-sm p-4 shadow-sm dark:bg-stone-950/85 dark:border-stone-800">
       <SectionTitle
         kicker="FLOOR PLAN"
         title="Floor Plan"
@@ -1015,16 +1140,16 @@ const leftWingColumn = (
       />
 
       {/* Mobile / small-screen: show all three lanes at once (slim hallway) */}
-      <div className="mt-4 sm:hidden">
-        <div className="grid grid-cols-[1fr_0.45fr_1fr] gap-2">
-          <div>{leftWingColumn}</div>
-          <div>{hallwayColumn}</div>
-          <div>{rightWingColumn}</div>
-        </div>
-      </div>
+      <div className="mt-4 sm:hidden overflow-x-hidden">
+         <div className="grid grid-cols-[minmax(0,1fr)_56px_minmax(0,1fr)] gap-2">
+           <div className="min-w-0">{leftWingColumn}</div>
+           <div className="min-w-0">{hallwayColumn}</div>
+           <div className="min-w-0">{rightWingColumn}</div>
+         </div>
+       </div>
 
       {/* Desktop / tablet: true 3-column grid */}
-      <div className="mt-4 hidden sm:grid sm:grid-cols-3 gap-4">
+      <div className="mt-4 hidden sm:grid sm:grid-cols-3 gap-4 overflow-x-hidden">
         {leftWingColumn}
         {hallwayColumn}
         {rightWingColumn}
@@ -1137,7 +1262,8 @@ function Recommendations({
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-stone-400">#{idx + 1}</span>
                 <span className="text-xs font-semibold tracking-tight text-stone-900 dark:text-stone-50">
-                  {r.number}
+                  <span className="hidden sm:inline">{r.number}</span>
+                  <span className="sm:hidden inline">{r.number.slice(-2)}</span>
                 </span>
               </div>
               <div className="text-[10px] text-stone-400">{m.score}</div>
@@ -1484,6 +1610,7 @@ export default function LayoutIntelligenceCopilotMVP() {
     avoidElevator: true,
     premiumTolerance: 6,
   });
+  const [scanMode, setScanMode] = useState<ScanMode>("calm");
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [signalTarget, setSignalTarget] = useState<Room | null>(null);
 
@@ -1559,9 +1686,16 @@ export default function LayoutIntelligenceCopilotMVP() {
     }));
   };
 
-  return (
-    <div className={"min-h-screen font-sans " + (theme === "dark" ? "dark" : "")}>
-      <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-50">
+    return (
+       <div className={"min-h-screen font-sans " + (theme === "dark" ? "dark" : "")}>
+           <div
+             className={
+               "min-h-screen " +
+               (theme === "dark"
+                 ? "bg-stone-950 text-stone-50"
+                 : "bg-stone-50 text-stone-900")
+             }
+           >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <HotelHero
             hotel={hotel}
@@ -1576,7 +1710,12 @@ export default function LayoutIntelligenceCopilotMVP() {
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left rail */}
             <aside className="lg:col-span-4 space-y-4">
-              <PreferencePanel prefs={prefs} setPrefs={setPrefs} />
+                         <PreferencePanel
+                prefs={prefs}
+                setPrefs={setPrefs}
+                scanMode={scanMode}
+                setScanMode={setScanMode}
+              />
 
             </aside>
 
@@ -1631,6 +1770,7 @@ export default function LayoutIntelligenceCopilotMVP() {
                 selectedRoom={selectedRoom}
                 onSelectRoom={handleSelectRoom}
                 mode={mode}
+                scanMode={scanMode}
                 onUpdateLandmarks={(lms) =>
                   updateLandmarksForFloor(floor.number, lms)
                 }
